@@ -1,0 +1,1 @@
+export function applyDamage(target, amount) { if (target.dead) return false; target.health -= amount; if (target.health <= 0) { target.health = 0; target.dead = true; target.state = 'DEAD'; } return true; }
