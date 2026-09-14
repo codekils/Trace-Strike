@@ -1,0 +1,2 @@
+import { WORLD } from '../config/constants.js';
+export function moveWithCollision(position, dx, dy, world, radius = WORLD.PLAYER_RADIUS) { const next = { x: position.x + dx, y: position.y + dy }; if (!world.isWall(next.x - radius, position.y) && !world.isWall(next.x + radius, position.y)) position.x = next.x; if (!world.isWall(position.x, next.y - radius) && !world.isWall(position.x, next.y + radius)) position.y = next.y; return position; }
