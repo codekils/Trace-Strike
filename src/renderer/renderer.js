@@ -1,3 +1,133 @@
 import { COLORS } from '../config/constants.js';
 import { wallHeight, screenX } from './projection.js';
-export class Renderer { constructor(canvas, camera, raycaster, ui) { this.canvas = canvas; this.ctx = canvas.getContext('2d'); this.camera = camera; this.raycaster = raycaster; this.ui = ui; this.resize(); addEventListener('resize', () => this.resize()); } resize() { this.canvas.width = Math.min(960, Math.max(480, innerWidth)); this.canvas.height = Math.min(540, Math.max(270, innerHeight)); } render(world, enemies, effects) { const { ctx, canvas } = this; const rays = Math.min(canvas.width, 480); ctx.fillStyle = COLORS.SKY; ctx.fillRect(0, 0, canvas.width, canvas.height / 2); ctx.fillStyle = COLORS.FLOOR; ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2); const hits = this.raycaster.cast(this.camera, rays); for (let i = 0; i < rays; i++) { const h = wallHeight(hits[i].distance, canvas.height); const shade = Math.floor(80 + hits[i].shade * 120); ctx.fillStyle = `rgb(${shade},${shade + 15},${shade})`; ctx.fillRect(screenX(i, canvas.width, rays), (canvas.height - h) / 2, canvas.width / rays + 1, h); } const visible = enemies.filter(enemy => !enemy.dead).map(enemy => this.projectEnemy(enemy)).filter(Boolean).sort((a, b) => b.depth - a.depth); for (const enemy of visible) { const size = Math.min(canvas.height * 1.2, canvas.height / enemy.depth * .55); ctx.fillStyle = COLORS.ENEMY; ctx.fillRect(enemy.x - size / 2, canvas.height / 2 - size / 2, size, size); ctx.fillStyle = '#220b0d'; ctx.fillRect(enemy.x - size * .25, canvas.height / 2 - size * .15, size * .5, size * .08); } effects.draw(ctx, canvas); this.ui.drawCrosshair(ctx, canvas); } projectEnemy(enemy) { const dx = enemy.position.x - this.camera.position.x; const dy = enemy.position.y - this.camera.position.y; const depth = dx * Math.cos(this.camera.angle) + dy * Math.sin(this.camera.angle); const side = -dx * Math.sin(this.camera.angle) + dy * Math.cos(this.camera.angle); if (depth <= .1 || Math.abs(side / depth) > Math.tan(this.camera.fov / 2)) return null; return { x: this.canvas.width / 2 + side / depth * this.canvas.width / (2 * Math.tan(this.camera.fov / 2)), depth }; } }
+
+export class Renderer {
+  constructor(canvas, camera, raycaster, ui) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.camera = camera;
+    this.raycaster = raycaster;
+    this.ui = ui;
+    this.resize();
+    addEventListener('resize', () => this.resize());
+  }
+
+  resize() {
+    this.canvas.width = Math.min(960, Math.max(480, innerWidth));
+    this.canvas.height = Math.min(540, Math.max(270, innerHeight));
+  }
+
+  render(world, enemies, effects) {
+    const { ctx, canvas } = this;
+    const rays = Math.min(canvas.width, 480);
+    ctx.fillStyle = COLORS.SKY;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    this.drawPerspectiveFloor(ctx, canvas);
+    const hits = this.raycaster.cast(this.camera, rays);
+    for (let index = 0; index < rays; index++) {
+      const hit = hits[index];
+      const height = wallHeight(hit.distance, canvas.height);
+      const x = screenX(index, canvas.width, rays);
+      const top = (canvas.height - height) / 2;
+      ctx.fillStyle = `rgba(185, 213, 191, ${Math.min(.16, hit.shade * .12)})`;
+      ctx.fillRect(x, top, canvas.width / rays + 1, height);
+      if (index % 8 === 0) {
+        ctx.strokeStyle = `rgba(233, 240, 232, ${.16 + hit.shade * .34})`;
+        ctx.beginPath();
+        ctx.moveTo(x, top);
+        ctx.lineTo(x, top + height);
+        ctx.stroke();
+      }
+    }
+    ctx.strokeStyle = 'rgba(233, 240, 232, .72)';
+    ctx.lineWidth = 1;
+    for (let index = 0; index < rays; index += 8) {
+      const hit = hits[index];
+      const x = screenX(index, canvas.width, rays);
+      const height = wallHeight(hit.distance, canvas.height);
+      ctx.beginPath();
+      ctx.moveTo(x, (canvas.height - height) / 2);
+      ctx.lineTo(x + canvas.width / rays * 8, (canvas.height - height) / 2);
+      ctx.moveTo(x, (canvas.height + height) / 2);
+      ctx.lineTo(x + canvas.width / rays * 8, (canvas.height + height) / 2);
+      ctx.stroke();
+    }
+    const visible = enemies.filter(enemy => !enemy.dead).map(enemy => this.projectEnemy(enemy)).filter(Boolean).sort((a, b) => b.depth - a.depth);
+    for (const enemy of visible) this.drawEnemy(ctx, enemy);
+    this.drawWeapon(ctx, canvas);
+    this.drawRadar(ctx, canvas, enemies);
+    effects.draw(ctx, canvas);
+    this.ui.drawCrosshair(ctx, canvas);
+  }
+
+  drawPerspectiveFloor(ctx, canvas) {
+    const horizon = canvas.height / 2;
+    ctx.strokeStyle = 'rgba(185, 213, 191, .16)';
+    ctx.lineWidth = 1;
+    for (let step = 1; step < 7; step++) {
+      const y = horizon + (canvas.height / 2) * (step / 7) ** .72;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
+    for (let lane = -5; lane <= 5; lane++) {
+      ctx.beginPath(); ctx.moveTo(canvas.width / 2, horizon); ctx.lineTo(canvas.width / 2 + lane * canvas.width * .22, canvas.height); ctx.stroke();
+    }
+  }
+
+  drawEnemy(ctx, enemy) {
+    const size = Math.min(this.canvas.height * 1.1, this.canvas.height / enemy.depth * .5);
+    const x = enemy.x;
+    const y = this.canvas.height / 2;
+    ctx.strokeStyle = COLORS.ENEMY;
+    ctx.lineWidth = Math.max(1, size * .035);
+    ctx.strokeRect(x - size * .12, y - size * .42, size * .24, size * .24);
+    ctx.beginPath();
+    ctx.moveTo(x, y - size * .18); ctx.lineTo(x, y + size * .22);
+    ctx.moveTo(x - size * .26, y - size * .05); ctx.lineTo(x + size * .26, y - size * .05);
+    ctx.moveTo(x, y + size * .22); ctx.lineTo(x - size * .2, y + size * .5);
+    ctx.moveTo(x, y + size * .22); ctx.lineTo(x + size * .2, y + size * .5);
+    ctx.stroke();
+  }
+
+  drawWeapon(ctx, canvas) {
+    const x = canvas.width / 2;
+    const bottom = canvas.height + 8;
+    ctx.strokeStyle = '#e9f0e8';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x - 52, bottom); ctx.lineTo(x - 42, canvas.height * .76); ctx.lineTo(x - 12, canvas.height * .68);
+    ctx.lineTo(x + 28, canvas.height * .75); ctx.lineTo(x + 58, bottom);
+    ctx.moveTo(x - 12, canvas.height * .68); ctx.lineTo(x - 4, canvas.height * .56); ctx.lineTo(x + 10, canvas.height * .56); ctx.lineTo(x + 28, canvas.height * .75);
+    ctx.moveTo(x - 4, canvas.height * .56); ctx.lineTo(x - 17, canvas.height * .6);
+    ctx.stroke();
+  }
+
+  drawRadar(ctx, canvas, enemies) {
+    const radius = Math.min(58, canvas.width * .08);
+    const center = { x: canvas.width - radius - 28, y: radius + 26 };
+    ctx.strokeStyle = 'rgba(233, 240, 232, .7)';
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+    ctx.moveTo(center.x - radius, center.y); ctx.lineTo(center.x + radius, center.y);
+    ctx.moveTo(center.x, center.y - radius); ctx.lineTo(center.x, center.y + radius); ctx.stroke();
+    ctx.fillStyle = '#b9d5bf';
+    ctx.beginPath(); ctx.moveTo(center.x, center.y - 8); ctx.lineTo(center.x - 6, center.y + 7); ctx.lineTo(center.x + 6, center.y + 7); ctx.closePath(); ctx.fill();
+    for (const enemy of enemies) {
+      if (enemy.dead) continue;
+      const dx = enemy.position.x - this.camera.position.x;
+      const dy = enemy.position.y - this.camera.position.y;
+      const scale = radius / 7;
+      const ex = center.x + (-dx * Math.sin(this.camera.angle) + dy * Math.cos(this.camera.angle)) * scale;
+      const ey = center.y - (dx * Math.cos(this.camera.angle) + dy * Math.sin(this.camera.angle)) * scale;
+      if (Math.hypot(ex - center.x, ey - center.y) < radius) { ctx.fillStyle = COLORS.ENEMY; ctx.fillRect(ex - 3, ey - 3, 6, 6); }
+    }
+  }
+
+  projectEnemy(enemy) {
+    const dx = enemy.position.x - this.camera.position.x;
+    const dy = enemy.position.y - this.camera.position.y;
+    const depth = dx * Math.cos(this.camera.angle) + dy * Math.sin(this.camera.angle);
+    const side = -dx * Math.sin(this.camera.angle) + dy * Math.cos(this.camera.angle);
+    if (depth <= .1 || Math.abs(side / depth) > Math.tan(this.camera.fov / 2)) return null;
+    return { x: this.canvas.width / 2 + side / depth * this.canvas.width / (2 * Math.tan(this.camera.fov / 2)), depth };
+  }
+}

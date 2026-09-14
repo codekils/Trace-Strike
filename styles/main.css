@@ -1,19 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@600;800&display=swap');
-:root { color-scheme: dark; --bg: #07090a; --ink: #e9f0e8; --muted: #829087; --green: #9df5ae; --red: #ff4d5f; --line: #24302b; }
+:root { color-scheme: dark; --bg: #050606; --ink: #e9f0e8; --muted: #929b96; --green: #43d39b; --red: #ff403d; --line: #58615c; }
 * { box-sizing: border-box; }
 html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); }
 body { font-family: 'Space Mono', monospace; }
-#game-shell { position: relative; width: 100vw; height: 100vh; background: radial-gradient(circle at 50% 45%, #17211b 0, var(--bg) 55%); }
+#game-shell { position: relative; width: 100vw; height: 100vh; background: var(--bg); }
 canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
-.overlay { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 18px; background: rgba(4, 7, 7, .78); text-align: center; }
+.overlay { position: absolute; inset: 24px; display: grid; place-content: center; justify-items: center; gap: 18px; border: 1px solid var(--line); background: rgba(5, 6, 6, .92); text-align: center; }
 .overlay[hidden], .hud[hidden] { display: none; }
-.overlay h1, .overlay h2 { margin: 0; font-family: 'Syne', sans-serif; letter-spacing: .08em; }
+.overlay h1, .overlay h2 { margin: 0; font-family: 'Space Mono', monospace; letter-spacing: .08em; font-weight: 400; }
 .overlay h1 { font-size: clamp(2.4rem, 8vw, 6rem); }
 .overlay h2 { font-size: clamp(2rem, 6vw, 4rem); }
-.eyebrow { margin: 0; color: var(--green); letter-spacing: .35em; font-size: .78rem; }
+.eyebrow { margin: 0; color: var(--ink); letter-spacing: .35em; font-size: .78rem; }
 .hint { color: var(--muted); font-size: .72rem; }
-button { border: 1px solid var(--green); padding: 13px 22px; color: var(--green); background: transparent; font: 700 .8rem 'Space Mono', monospace; letter-spacing: .12em; cursor: pointer; }
+button { border: 1px solid var(--ink); padding: 13px 22px; color: var(--ink); background: transparent; font: 700 .8rem 'Space Mono', monospace; letter-spacing: .12em; cursor: pointer; }
 button:hover, button:focus-visible { background: var(--green); color: var(--bg); outline: none; }
-.hud { position: absolute; inset: 0; pointer-events: none; padding: 24px; color: var(--green); font-size: .75rem; letter-spacing: .1em; }
-.hud-line { display: flex; justify-content: space-between; gap: 20px; text-shadow: 0 0 10px rgba(157,245,174,.35); }
+.hud { position: absolute; inset: 0; pointer-events: none; padding: 28px; color: var(--ink); font-size: .75rem; letter-spacing: .1em; }
+.hud-line { display: flex; justify-content: flex-start; gap: 32px; text-shadow: 0 0 8px rgba(233,240,232,.28); }
+.hud-line:first-child span:first-child, .hud-line:nth-child(2) span:first-child { color: var(--green); }
 .hud .danger { color: var(--red); }
