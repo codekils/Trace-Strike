@@ -63,46 +63,19 @@ export class Renderer {
   }
 
   drawPerspectiveFloor(ctx, canvas, horizon) {
-    const centerX = canvas.width * .5;
-    ctx.save();
-    ctx.strokeStyle = 'rgba(233, 240, 232, .16)';
-    ctx.lineWidth = 1;
-    for (const step of [.58, .68, .8, .92]) {
-      const y = horizon + (canvas.height - horizon) * ((step - .5) / .5);
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvas.width, y);
-      ctx.stroke();
-    }
-    for (const lane of [-2, -1, 1, 2]) {
-      ctx.beginPath();
-      ctx.moveTo(centerX, horizon);
-      ctx.lineTo(centerX + lane * canvas.width * .19, canvas.height);
-      ctx.stroke();
-    }
-    ctx.restore();
+    // The floor remains black; perspective comes from architecture.
   }
 
   drawWalls(ctx, canvas, hits, rays) {
-    const horizon = this.getHorizon();
-    const columnWidth = canvas.width / rays;
-    for (let index = 0; index < rays; index++) {
-      const hit = hits[index];
-      if (!hit) continue;
-      const x = screenX(index, canvas.width, rays);
-      const height = wallHeight(hit.distance, canvas.height);
-      const top = horizon - height * .5;
-      const shade = Math.max(.015, Math.min(.08, hit.shade * .06));
-      ctx.fillStyle = `rgba(220, 230, 222, ${shade})`;
-      ctx.fillRect(x, top, columnWidth + 1, height);
-    }
+    // Walls are black planes bounded by their projected contours.
   }
 
   drawWallContours(ctx, canvas, hits, rays) {
     const horizon = this.getHorizon();
     const topPoints = [];
     const bottomPoints = [];
-    for (let index = 0; index < rays; index += 6) {
+    const contourStep = 24;
+    for (let index = 0; index < rays; index += contourStep) {
       const hit = hits[index];
       if (!hit) continue;
       const x = screenX(index, canvas.width, rays);
@@ -110,16 +83,19 @@ export class Renderer {
       topPoints.push({ x, y: horizon - height * .5 });
       bottomPoints.push({ x, y: horizon + height * .5 });
     }
+
+    const lastHit = hits[rays - 1];
+    if (lastHit) {
+      const height = wallHeight(lastHit.distance, canvas.height);
+      topPoints.push({ x: canvas.width, y: horizon - height * .5 });
+      bottomPoints.push({ x: canvas.width, y: horizon + height * .5 });
+    }
+
     ctx.save();
-    ctx.strokeStyle = 'rgba(233, 240, 232, .76)';
+    ctx.strokeStyle = 'rgba(238, 242, 238, .92)';
     ctx.lineWidth = 1;
     this.drawPolyline(ctx, topPoints);
     this.drawPolyline(ctx, bottomPoints);
-    ctx.strokeStyle = 'rgba(233, 240, 232, .3)';
-    ctx.beginPath();
-    ctx.moveTo(0, horizon);
-    ctx.lineTo(canvas.width, horizon);
-    ctx.stroke();
     ctx.restore();
   }
 
