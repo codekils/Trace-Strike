@@ -1,0 +1,1 @@
+export const ENEMIES = Object.freeze({ sentinel: { health: 100, speed: .75, damage: 8, attackRange: 1.2, attackCooldown: 900, radius: .22 } });
