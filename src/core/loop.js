@@ -1,0 +1,2 @@
+import { WORLD } from '../config/constants.js';
+export class Loop { constructor(update, render) { this.update = update; this.render = render; this.last = 0; this.running = false; this.frame = t => { if (!this.running) return; const dt = Math.min((t - this.last) / 1000 || 0, WORLD.MAX_DT); this.last = t; this.update(dt); this.render(); requestAnimationFrame(this.frame); }; } start() { this.running = true; requestAnimationFrame(this.frame); } stop() { this.running = false; } }
