@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trace Strike</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <main id="game-shell">
+    <canvas id="game-canvas" aria-label="Trace Strike game"></canvas>
+    <section id="hud" class="hud" hidden></section>
+    <section id="menu" class="overlay"><p class="eyebrow">TRACE STRIKE</p><h1>LINE OF SIGHT</h1><button id="start-button">START MISSION</button><p class="hint">WASD move · Mouse aim · Click fire · R reload · Esc pause</p></section>
+    <section id="pause" class="overlay" hidden><p class="eyebrow">SIGNAL HELD</p><h2>PAUSED</h2><button id="resume-button">RESUME</button></section>
+    <section id="game-over" class="overlay" hidden><p class="eyebrow">SIGNAL LOST</p><h2>GAME OVER</h2><button id="restart-button">RESTART</button></section>
+  </main>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
