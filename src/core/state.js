@@ -1,0 +1,2 @@
+import { GAME_STATES } from '../config/constants.js';
+export class State { constructor() { this.current = GAME_STATES.MENU; } set(next) { this.current = next; } is(value) { return this.current === value; } }
