@@ -1,5 +1,9 @@
 import { COLORS } from '../config/constants.js';
-import { wallHeight, screenX } from './projection.js';
+import {
+  wallHeight,
+  screenX,
+  projectVerticalSegment
+} from './projection.js';
 
 export class Renderer {
   constructor(canvas, camera, raycaster, ui) {
@@ -128,23 +132,75 @@ export class Renderer {
   }
 
   projectEnemy(enemy) {
-    const dx = enemy.position.x - this.camera.position.x;
-    const dy = enemy.position.y - this.camera.position.y;
-    const angle = this.camera.angle;
-    const depth = dx * Math.cos(angle) + dy * Math.sin(angle);
-    const side = -dx * Math.sin(angle) + dy * Math.cos(angle);
-    if (depth <= .1) return null;
-    const halfFov = this.camera.fov * .5;
-    if (Math.abs(side / depth) > Math.tan(halfFov)) return null;
-    const focalLength = this.canvas.width / (2 * Math.tan(halfFov));
-    const x = this.canvas.width * .5 + side / depth * focalLength;
-    const dimensions = enemy.dimensions ?? { width: .42, height: .95, depth: .28 };
-    const projectedHeight = dimensions.height / Math.max(depth, .001) * focalLength * (enemy.visualScale ?? 1);
-    const height = Math.max(20, Math.min(this.canvas.height * 1.25, projectedHeight));
-    const worldHeight = Math.max(.01, dimensions.height);
-    const feetOffset = ((this.camera.height ?? .5) / worldHeight - .5) * height;
-    const bottom = this.getHorizon() + feetOffset + height * .5;
-    return { enemy, x, depth, top: bottom - height, bottom, height, centerY: bottom - height * .5 };
+    const dx =
+      enemy.position.x -
+      this.camera.position.x;
+
+    const dy =
+      enemy.position.y -
+      this.camera.position.y;
+
+    const cameraAngle =
+      this.camera.angle;
+
+    const depth =
+      dx * Math.cos(cameraAngle) +
+      dy * Math.sin(cameraAngle);
+
+    const side =
+      -dx * Math.sin(cameraAngle) +
+      dy * Math.cos(cameraAngle);
+
+    if (depth <= 0.1) {
+      return null;
+    }
+
+    const halfFov =
+      this.camera.fov * 0.5;
+
+    if (
+      Math.abs(side / depth) >
+      Math.tan(halfFov)
+    ) {
+      return null;
+    }
+
+    const horizon =
+      this.getHorizon();
+
+    const projection =
+      projectVerticalSegment(
+        enemy.position,
+        enemy.dimensions?.height ?? 0.95,
+        this.camera,
+        this.canvas.width,
+        this.canvas.height,
+        horizon
+      );
+
+    if (!projection) {
+      return null;
+    }
+
+    return {
+      enemy,
+
+      x: projection.x,
+
+      top: projection.top,
+
+      bottom: projection.bottom,
+
+      height: projection.height,
+
+      depth: projection.depth,
+
+      side: projection.side,
+
+      centerY:
+        projection.top +
+        projection.height * 0.5
+    };
   }
 
   drawEnemy(ctx, projected) {
