@@ -17,10 +17,22 @@ export class Renderer {
     this.canvas.height = Math.max(270, Math.min(540, innerHeight));
   }
 
+  getHorizon() {
+    const offset =
+      Number.isFinite(this.camera.horizonOffset)
+        ? this.camera.horizonOffset
+        : 0;
+
+    return (
+      this.canvas.height * 0.5 +
+      offset * this.canvas.height
+    );
+  }
+
   render(world, enemies, effects, weapon) {
     const { ctx, canvas } = this;
     const rays = Math.min(canvas.width, 480);
-    const horizon = canvas.height * .5;
+    const horizon = this.getHorizon();
     ctx.fillStyle = '#020303';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     this.drawAtmosphere(ctx, canvas);
@@ -74,7 +86,7 @@ export class Renderer {
       if (!hit) continue;
       const x = screenX(index, canvas.width, rays);
       const height = wallHeight(hit.distance, canvas.height);
-      const top = (canvas.height - height) * .5;
+      const top = horizon - height * .5;
       const shade = Math.max(.015, Math.min(.08, hit.shade * .06));
       ctx.fillStyle = `rgba(220, 230, 222, ${shade})`;
       ctx.fillRect(x, top, columnWidth + 1, height);
@@ -82,7 +94,7 @@ export class Renderer {
   }
 
   drawWallContours(ctx, canvas, hits, rays) {
-    const horizon = canvas.height * .5;
+    const horizon = this.getHorizon();
     const topPoints = [];
     const bottomPoints = [];
     for (let index = 0; index < rays; index += 6) {
@@ -90,8 +102,8 @@ export class Renderer {
       if (!hit) continue;
       const x = screenX(index, canvas.width, rays);
       const height = wallHeight(hit.distance, canvas.height);
-      topPoints.push({ x, y: (canvas.height - height) * .5 });
-      bottomPoints.push({ x, y: (canvas.height + height) * .5 });
+      topPoints.push({ x, y: horizon - height * .5 });
+      bottomPoints.push({ x, y: horizon + height * .5 });
     }
     ctx.save();
     ctx.strokeStyle = 'rgba(233, 240, 232, .76)';
@@ -130,7 +142,7 @@ export class Renderer {
     const height = Math.max(20, Math.min(this.canvas.height * 1.25, projectedHeight));
     const worldHeight = Math.max(.01, dimensions.height);
     const feetOffset = ((this.camera.height ?? .5) / worldHeight - .5) * height;
-    const bottom = this.canvas.height * .5 + feetOffset + height * .5;
+    const bottom = this.getHorizon() + feetOffset + height * .5;
     return { enemy, x, depth, top: bottom - height, bottom, height, centerY: bottom - height * .5 };
   }
 
