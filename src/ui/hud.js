@@ -1,0 +1,2 @@
+import { drawCrosshair } from './crosshair.js';
+export class HUD { constructor(element) { this.element = element; } update(player, weapon, enemies, sector) { this.element.innerHTML = `<div class="hud-line"><span>HP ${String(player.health).padStart(3, '0')}</span><span>SECTOR ${sector}</span></div><div class="hud-line"><span>AMMO ${weapon.ammo}/${weapon.config.magazine}</span><span>ENEMIES ${enemies.filter(enemy => !enemy.dead).length}</span></div>`; } drawCrosshair(ctx, canvas) { drawCrosshair(ctx, canvas); } }
