@@ -74,33 +74,55 @@ export class Renderer {
 
   drawWallContours(ctx, canvas, hits, rays) {
     const horizon = this.getHorizon();
-    const topPoints = [];
-    const bottomPoints = [];
     const contourStep = 24;
-    for (let index = 0; index < rays; index += contourStep) {
-      const hit = hits[index];
-      if (!hit) continue;
-      const x = screenX(index, canvas.width, rays);
-      const height = wallHeight(hit.distance, canvas.height);
-      topPoints.push({ x, y: horizon - height * .5 });
-      bottomPoints.push({ x, y: horizon + height * .5 });
-    }
-
-    const lastHit = hits[rays - 1];
-    if (lastHit) {
-      const height = wallHeight(lastHit.distance, canvas.height);
-      topPoints.push({ x: canvas.width, y: horizon - height * .5 });
-      bottomPoints.push({ x: canvas.width, y: horizon + height * .5 });
-    }
-
     ctx.save();
     ctx.strokeStyle = 'rgba(238, 242, 238, .92)';
     ctx.lineWidth = 1;
-    this.drawPolyline(ctx, topPoints);
-    this.drawPolyline(ctx, bottomPoints);
+    let previous = null;
+
+    for (let index = 0; index < rays; index += contourStep) {
+      const hit = hits[index];
+      if (!hit) continue;
+
+      const x = screenX(index, canvas.width, rays);
+      const height = wallHeight(hit.distance, canvas.height);
+      const point = {
+        x,
+        top: horizon - height * .5,
+        bottom: horizon + height * .5,
+        distance: hit.distance
+      };
+
+      if (
+        previous &&
+        Math.abs(point.distance - previous.distance) > .35
+      ) {
+        this.drawWallEdge(ctx, previous, point);
+      }
+
+      previous = point;
+    }
+
+    ctx.restore();
+  }
+
+  drawWallEdge(ctx, previous, point) {
+    const span = Math.max(4, point.x - previous.x);
+    ctx.beginPath();
+    ctx.moveTo(point.x - span, previous.top);
+    ctx.lineTo(point.x, point.top);
+    ctx.lineTo(point.x, point.bottom);
+    ctx.lineTo(point.x - span, previous.bottom);
+    ctx.stroke();
+
+    ctx.save();
     ctx.strokeStyle = 'rgba(238, 242, 238, .32)';
-    this.drawPolyline(ctx, topPoints, 3);
-    this.drawPolyline(ctx, bottomPoints, -3);
+    ctx.beginPath();
+    ctx.moveTo(point.x - span, previous.top + 3);
+    ctx.lineTo(point.x - 3, point.top + 3);
+    ctx.moveTo(point.x - span, previous.bottom - 3);
+    ctx.lineTo(point.x - 3, point.bottom - 3);
+    ctx.stroke();
     ctx.restore();
   }
 
