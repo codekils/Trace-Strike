@@ -15,7 +15,7 @@ export class Enemy extends Entity {
 		// World-space dimensions of the humanoid.
 		this.dimensions = {
 			width: 0.42,
-			height: 0.95,
+			height: 0.72,
 			depth: 0.28
 		};
 
