@@ -277,4 +277,23 @@ STATUS:
 PARTIAL
 
 Resumo:
-Trace Strike foi implementado como um jogo modular de Canvas 2D com mapa geométrico, raycasting, perspectiva, câmera, colisão, jogador, arma hitscan, inimigos com IA, dano, HUD, menu, pausa, game over e áudio sintetizado. A sintaxe, estrutura, inicialização HTTP, renderização, disparo, recarga, dano, pausa e derrota foram verificadas. O status é PARTIAL porque alguns controles direcionais, a morte visual de inimigos e a saída sonora não puderam ser observados de forma automatizada neste ambiente, não por um erro conhecido de carregamento ou sintaxe.
+Trace Strike foi implementado como um jogo modular de Canvas 2D com mapa geométrico, raycasting, perspectiva, câmera, colisão, jogador, arma hitscan, inimigos com IA, dano, HUD, menu, pausa, game over e áudio sintetizado. O refinamento adicionou ondas progressivas, munição 18/36, recarga parcial, silhueta geométrica da arma, inimigos humanoides geométricos, linha de visão baseada no raycaster, tracer, muzzle flash, recoil e feedback de eliminação.
+
+--------------------------------------------------
+REFINAMENTO VISUAL E DE GAMEPLAY — 2026-09-14
+--------------------------------------------------
+
+Resultado da validação final:
+
+- Página nova carregada via HTTP sem erros de console.
+- HUD inicial confirmado como WAVE 01, HOSTILES 02 e AMMO 18 / 36.
+- Disparo confirmado: AMMO 17 / 36.
+- Recarga confirmada: AMMO 18 / 35.
+- Renderer atualizado com paredes menos densas, inimigos humanoides geométricos, arma detalhada, radar, tracer, muzzle flash e recoil de recarga.
+- Visibilidade de inimigos passou a exigir linha de visão livre pelo Raycaster; paredes bloqueiam a projeção visual.
+- Ondas usam pontos válidos do mapa e iniciam com 2 inimigos, aumentando em 2 após todos morrerem.
+
+Limitações restantes:
+
+- A automação não forçou a eliminação completa de uma onda para observar WAVE 02 visualmente.
+- A saída sonora continua dependente do contexto Web Audio desbloqueado pelo navegador.

@@ -22,7 +22,7 @@ Open `http://localhost:8000` in a modern browser. Opening `index.html` directly 
 - `A` / `D`: strafe
 - Mouse: rotate the camera
 - Left click: fire the sidearm
-- `R`: reload
+- `R`: reload (18-round magazine with reserve ammunition)
 - `Esc`: pause
 
 ## Architecture
@@ -41,7 +41,9 @@ The project follows `src/doc/TRACE_STRIKE_ARCHITECTURE.md`:
 
 ## Main systems
 
-The renderer casts a bounded number of rays per frame and projects wall distance into vertical columns. Enemy visibility uses camera-space projection, while combat performs a forward hitscan and checks map geometry before applying damage. Collision uses the same map cells that define the walls, keeping the logical and visual world aligned.
+The renderer casts a bounded number of rays per frame and projects wall distance into vertical columns. Enemy visibility uses the raycaster line-of-sight test, so walls hide entities behind them. Combat performs a forward hitscan and checks map geometry before applying damage. Collision uses the same map cells that define the walls, keeping the logical and visual world aligned.
+
+The visual language is intentionally wireframe: black space, white geometry, red humanoid enemies, green telemetry, a geometric weapon silhouette, a compact radar, short tracers, and restrained muzzle/reload feedback. Enemies progress through waves of 2, 4, 6, and more hostiles. The sidearm uses an 18-round magazine, 36 initial reserve rounds, and a 144-round reserve cap.
 
 ## Requirements
 
