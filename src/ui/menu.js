@@ -1,0 +1,1 @@
+export class Menu { constructor(element, start) { this.element = element; element.querySelector('#start-button').addEventListener('click', start); } show() { this.element.hidden = false; } hide() { this.element.hidden = true; } }
