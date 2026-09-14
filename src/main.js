@@ -1,0 +1,14 @@
+import { Input } from './core/input.js';
+import { Loop } from './core/loop.js';
+import { Game } from './core/game.js';
+import { AudioSystem } from './audio/audio.js';
+import { HUD } from './ui/hud.js';
+import { Menu } from './ui/menu.js';
+import { Pause } from './ui/pause.js';
+const canvas = document.querySelector('#game-canvas');
+const hud = new HUD(document.querySelector('#hud'));
+const menu = new Menu(document.querySelector('#menu'), () => {});
+const pause = new Pause(document.querySelector('#pause'), () => {});
+const audio = new AudioSystem();
+const game = new Game(canvas, new Input(), { hud, menu, pause, over: document.querySelector('#game-over') }, audio);
+new Loop(dt => game.update(dt), () => game.render()).start();
