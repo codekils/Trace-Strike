@@ -204,64 +204,379 @@ export class Renderer {
   }
 
   drawEnemy(ctx, projected) {
-    const { enemy, x, top, bottom, height } = projected;
-    const humanoid = enemy.humanoid ?? { head: { width: .22, height: .2, depth: .18, y: .8 }, torso: { width: .3, height: .32, y: .49 }, shoulders: { width: .38, y: .63 }, arms: { thickness: .07, shoulderY: .62, handY: .42 }, legs: { thickness: .08, hipY: .34, footY: .05, separation: .1 } };
-    const scale = height / Math.max(.01, enemy.dimensions?.height ?? .95);
-    const localY = value => bottom - value * scale;
-    const color = enemy.visualState?.hitFlash > 0 ? '#fff' : enemy.visual?.outline ?? COLORS.ENEMY ?? '#ff334c';
+    const {
+      enemy,
+      x,
+      top,
+      bottom,
+      height
+    } = projected;
+
+    const modelHeight = 42;
+
+    const scale =
+      height /
+      modelHeight;
+
+    const lineWidth =
+      Math.max(
+        2,
+        Math.min(
+          5,
+          scale * 2.2
+        )
+      );
+
+    const color =
+      enemy.visualState?.hitFlash > 0
+        ? '#ffffff'
+        : enemy.visual?.outline ?? '#ff2f45';
+
+    const centerX = x;
+    const baseY = bottom;
+
+    const walkPhase =
+      enemy.visualState?.walkPhase ?? 0;
+
+    const bob =
+      enemy.state === 'CHASE'
+        ? Math.sin(walkPhase * 2) *
+          height *
+          0.015
+        : 0;
+
     ctx.save();
+
     ctx.strokeStyle = color;
-    ctx.fillStyle = enemy.visual?.fill ?? 'rgba(5, 6, 6, .92)';
-    ctx.lineWidth = Math.max(1.5, Math.min(5, scale * .035));
+    ctx.fillStyle =
+      enemy.visual?.fill ??
+      '#050606';
+
+    ctx.lineWidth = lineWidth;
     ctx.lineJoin = 'miter';
     ctx.lineCap = 'square';
-    const headWidth = humanoid.head.width * scale;
-    const headHeight = humanoid.head.height * scale;
-    const headY = localY(humanoid.head.y);
-    ctx.fillRect(x - headWidth * .5, headY, headWidth, headHeight);
-    ctx.strokeRect(x - headWidth * .5, headY, headWidth, headHeight);
-    const torsoWidth = humanoid.torso.width * scale;
-    const torsoHeight = humanoid.torso.height * scale;
-    const torsoTop = localY(humanoid.torso.y + humanoid.torso.height);
-    ctx.fillRect(x - torsoWidth * .5, torsoTop, torsoWidth, torsoHeight);
-    ctx.strokeRect(x - torsoWidth * .5, torsoTop, torsoWidth, torsoHeight);
-    const shoulderWidth = humanoid.shoulders.width * scale;
-    const shoulderY = localY(humanoid.shoulders.y);
+
+    const headWidth =
+      11 * scale;
+
+    const headHeight =
+      10 * scale;
+
+    const headX =
+      centerX -
+      headWidth * 0.5;
+
+    const headY =
+      baseY -
+      height +
+      1 * scale +
+      bob;
+
+    ctx.fillRect(
+      headX,
+      headY,
+      headWidth,
+      headHeight
+    );
+
+    ctx.strokeRect(
+      headX,
+      headY,
+      headWidth,
+      headHeight
+    );
+
+    const neckWidth =
+      4 * scale;
+
+    const neckTop =
+      headY +
+      headHeight;
+
+    const neckBottom =
+      neckTop +
+      3 * scale;
+
     ctx.beginPath();
-    ctx.moveTo(x - shoulderWidth * .5, shoulderY);
-    ctx.lineTo(x + shoulderWidth * .5, shoulderY);
+
+    ctx.moveTo(
+      centerX - neckWidth * 0.5,
+      neckTop
+    );
+
+    ctx.lineTo(
+      centerX - neckWidth * 0.5,
+      neckBottom
+    );
+
+    ctx.moveTo(
+      centerX + neckWidth * 0.5,
+      neckTop
+    );
+
+    ctx.lineTo(
+      centerX + neckWidth * 0.5,
+      neckBottom
+    );
+
     ctx.stroke();
-    const armSpread = shoulderWidth * .5;
-    ctx.lineWidth = Math.max(ctx.lineWidth, humanoid.arms.thickness * scale);
+
+    const shoulderWidth =
+      24 * scale;
+
+    const shoulderY =
+      neckBottom;
+
     ctx.beginPath();
-    ctx.moveTo(x - armSpread, localY(humanoid.arms.shoulderY));
-    ctx.lineTo(x - armSpread - humanoid.arms.thickness * scale * 1.5, localY(humanoid.arms.handY));
-    ctx.moveTo(x + armSpread, localY(humanoid.arms.shoulderY));
-    ctx.lineTo(x + armSpread + humanoid.arms.thickness * scale * 1.5, localY(humanoid.arms.handY));
+
+    ctx.moveTo(
+      centerX -
+        shoulderWidth * 0.5,
+      shoulderY
+    );
+
+    ctx.lineTo(
+      centerX +
+        shoulderWidth * 0.5,
+      shoulderY
+    );
+
     ctx.stroke();
-    const legOffset = humanoid.legs.separation * scale * .5;
-    ctx.lineWidth = Math.max(ctx.lineWidth, humanoid.legs.thickness * scale);
+
+    const torsoTopWidth =
+      17 * scale;
+
+    const torsoBottomWidth =
+      13 * scale;
+
+    const torsoHeight =
+      13 * scale;
+
+    const torsoTopY =
+      shoulderY +
+      1 * scale;
+
+    const torsoBottomY =
+      torsoTopY +
+      torsoHeight;
+
     ctx.beginPath();
-    ctx.moveTo(x - legOffset, localY(humanoid.legs.hipY));
-    ctx.lineTo(x - legOffset, localY(humanoid.legs.footY));
-    ctx.moveTo(x + legOffset, localY(humanoid.legs.hipY));
-    ctx.lineTo(x + legOffset, localY(humanoid.legs.footY));
+
+    ctx.moveTo(
+      centerX -
+        torsoTopWidth * 0.5,
+      torsoTopY
+    );
+
+    ctx.lineTo(
+      centerX +
+        torsoTopWidth * 0.5,
+      torsoTopY
+    );
+
+    ctx.lineTo(
+      centerX +
+        torsoBottomWidth * 0.5,
+      torsoBottomY
+    );
+
+    ctx.lineTo(
+      centerX -
+        torsoBottomWidth * 0.5,
+      torsoBottomY
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
     ctx.stroke();
-    const walkPhase = enemy.visualState?.walkPhase ?? 0;
-    if (enemy.state === 'CHASE' && Math.abs(Math.sin(walkPhase)) > .05) {
-      const swing = Math.sin(walkPhase) * height * .035;
-      ctx.beginPath();
-      ctx.moveTo(x - legOffset, localY(humanoid.legs.hipY));
-      ctx.lineTo(x - legOffset - swing, localY(humanoid.legs.footY));
-      ctx.moveTo(x + legOffset, localY(humanoid.legs.hipY));
-      ctx.lineTo(x + legOffset + swing, localY(humanoid.legs.footY));
-      ctx.stroke();
-    }
+
+    const armThickness =
+      Math.max(
+        2,
+        3.2 * scale
+      );
+
+    const armStartY =
+      shoulderY +
+      1 * scale;
+
+    const armEndY =
+      torsoBottomY -
+      1 * scale;
+
+    const armOffset =
+      shoulderWidth *
+      0.5;
+
+    ctx.lineWidth = armThickness;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      centerX - armOffset,
+      armStartY
+    );
+
+    ctx.lineTo(
+      centerX -
+        14 * scale,
+      armEndY +
+        4 * scale
+    );
+
+    ctx.moveTo(
+      centerX + armOffset,
+      armStartY
+    );
+
+    ctx.lineTo(
+      centerX +
+        14 * scale,
+      armEndY +
+        4 * scale
+    );
+
+    ctx.stroke();
+
+    const handSize =
+      2.5 * scale;
+
+    ctx.fillRect(
+      centerX -
+        14 * scale -
+        handSize * 0.5,
+      armEndY +
+        4 * scale -
+        handSize * 0.5,
+      handSize,
+      handSize
+    );
+
+    ctx.fillRect(
+      centerX +
+        14 * scale -
+        handSize * 0.5,
+      armEndY +
+        4 * scale -
+        handSize * 0.5,
+      handSize,
+      handSize
+    );
+
+    const hipWidth =
+      14 * scale;
+
+    const hipHeight =
+      4 * scale;
+
+    const hipY =
+      torsoBottomY;
+
+    ctx.fillRect(
+      centerX -
+        hipWidth * 0.5,
+      hipY,
+      hipWidth,
+      hipHeight
+    );
+
+    ctx.strokeRect(
+      centerX -
+        hipWidth * 0.5,
+      hipY,
+      hipWidth,
+      hipHeight
+    );
+
+    const legThickness =
+      Math.max(
+        2.5,
+        3.4 * scale
+      );
+
+    const legTopY =
+      hipY +
+      hipHeight;
+
+    const legBottomY =
+      baseY -
+      2 * scale +
+      bob;
+
+    const legOffset =
+      4 * scale;
+
+    ctx.lineWidth = legThickness;
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      centerX - legOffset,
+      legTopY
+    );
+
+    ctx.lineTo(
+      centerX - legOffset,
+      legBottomY
+    );
+
+    ctx.moveTo(
+      centerX + legOffset,
+      legTopY
+    );
+
+    ctx.lineTo(
+      centerX + legOffset,
+      legBottomY
+    );
+
+    ctx.stroke();
+
+    const footWidth =
+      5 * scale;
+
+    const footHeight =
+      2.5 * scale;
+
+    ctx.fillRect(
+      centerX -
+        legOffset -
+        footWidth * 0.5,
+      legBottomY -
+        footHeight * 0.5,
+      footWidth,
+      footHeight
+    );
+
+    ctx.fillRect(
+      centerX +
+        legOffset -
+        footWidth * 0.5,
+      legBottomY -
+        footHeight * 0.5,
+      footWidth,
+      footHeight
+    );
+
     ctx.lineWidth = 1;
+
     ctx.beginPath();
-    ctx.moveTo(x - height * .08, bottom);
-    ctx.lineTo(x + height * .08, bottom);
+
+    ctx.moveTo(
+      centerX -
+        9 * scale,
+      baseY
+    );
+
+    ctx.lineTo(
+      centerX +
+        9 * scale,
+      baseY
+    );
+
     ctx.stroke();
+
     ctx.restore();
   }
 
