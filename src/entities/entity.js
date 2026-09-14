@@ -1,0 +1,1 @@
+export class Entity { constructor(position, health = 1) { this.position = { ...position }; this.health = health; this.dead = false; this.state = 'IDLE'; } }
