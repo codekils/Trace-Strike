@@ -24,34 +24,7 @@ export class Renderer {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     this.drawPerspectiveFloor(ctx, canvas);
     const hits = this.raycaster.cast(this.camera, rays);
-    for (let index = 0; index < rays; index++) {
-      const hit = hits[index];
-      const height = wallHeight(hit.distance, canvas.height);
-      const x = screenX(index, canvas.width, rays);
-      const top = (canvas.height - height) / 2;
-      ctx.fillStyle = `rgba(185, 213, 191, ${Math.min(.16, hit.shade * .12)})`;
-      ctx.fillRect(x, top, canvas.width / rays + 1, height);
-      if (index % 24 === 0) {
-        ctx.strokeStyle = `rgba(233, 240, 232, ${.16 + hit.shade * .34})`;
-        ctx.beginPath();
-        ctx.moveTo(x, top);
-        ctx.lineTo(x, top + height);
-        ctx.stroke();
-      }
-    }
-    ctx.strokeStyle = 'rgba(233, 240, 232, .72)';
-    ctx.lineWidth = 1;
-    for (let index = 0; index < rays; index += 12) {
-      const hit = hits[index];
-      const x = screenX(index, canvas.width, rays);
-      const height = wallHeight(hit.distance, canvas.height);
-      ctx.beginPath();
-      ctx.moveTo(x, (canvas.height - height) / 2);
-      ctx.lineTo(x + canvas.width / rays * 8, (canvas.height - height) / 2);
-      ctx.moveTo(x, (canvas.height + height) / 2);
-      ctx.lineTo(x + canvas.width / rays * 8, (canvas.height + height) / 2);
-      ctx.stroke();
-    }
+    this.drawArchitecture(ctx, canvas, hits, rays);
     const visible = enemies.filter(enemy => !enemy.dead && this.raycaster.hasLineOfSight(this.camera.position, enemy.position)).map(enemy => this.projectEnemy(enemy)).filter(Boolean).sort((a, b) => b.depth - a.depth);
     for (const enemy of visible) this.drawEnemy(ctx, enemy);
     weapon?.render(ctx, canvas.width, canvas.height);
@@ -62,15 +35,33 @@ export class Renderer {
 
   drawPerspectiveFloor(ctx, canvas) {
     const horizon = canvas.height / 2;
-    ctx.strokeStyle = 'rgba(185, 213, 191, .16)';
+    ctx.strokeStyle = 'rgba(185, 213, 191, .12)';
     ctx.lineWidth = 1;
-    for (let step = 1; step < 7; step++) {
+    for (let step = 1; step < 5; step++) {
       const y = horizon + (canvas.height / 2) * (step / 7) ** .72;
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
     }
-    for (let lane = -5; lane <= 5; lane++) {
+    for (let lane = -3; lane <= 3; lane++) {
       ctx.beginPath(); ctx.moveTo(canvas.width / 2, horizon); ctx.lineTo(canvas.width / 2 + lane * canvas.width * .22, canvas.height); ctx.stroke();
     }
+    ctx.strokeStyle = 'rgba(233, 240, 232, .35)';
+    ctx.beginPath(); ctx.moveTo(0, horizon); ctx.lineTo(canvas.width, horizon); ctx.stroke();
+  }
+
+  drawArchitecture(ctx, canvas, hits, rays) {
+    const samples = [0, Math.floor(rays * .22), Math.floor(rays * .5), Math.floor(rays * .78), rays - 1];
+    ctx.strokeStyle = 'rgba(233, 240, 232, .78)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    samples.forEach((index, sampleIndex) => {
+      const x = screenX(index, canvas.width, rays);
+      const height = wallHeight(hits[index].distance, canvas.height);
+      const top = (canvas.height - height) / 2;
+      const bottom = (canvas.height + height) / 2;
+      if (sampleIndex === 0) { ctx.moveTo(x, top); ctx.moveTo(x, bottom); }
+      else { ctx.lineTo(x, top); ctx.moveTo(screenX(samples[sampleIndex - 1], canvas.width, rays), (canvas.height + wallHeight(hits[samples[sampleIndex - 1]].distance, canvas.height)) / 2); ctx.lineTo(x, bottom); }
+    });
+    ctx.stroke();
   }
 
   drawEnemy(ctx, enemy) {

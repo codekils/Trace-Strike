@@ -26,6 +26,19 @@ Observações:
 Não foram instaladas dependências externas. Não há package.json porque o núcleo usa apenas HTML, CSS, JavaScript, Canvas 2D e Web Audio API.
 
 --------------------------------------------------
+VALIDAÇÃO VISUAL — RECONSTRUÇÃO DE PERSPECTIVA
+--------------------------------------------------
+
+Data da rodada: 2026-09-14
+Viewport: 738x447
+
+Resultado:
+PASS. A cena foi verificada em uma nova página Chromium após a redução da grade. O horizonte permaneceu explícito, o piso ficou com poucas guias convergentes, os contornos arquiteturais ficaram esparsos, e a arma permaneceu no quadrante inferior direito apontando para o centro. Radar, HUD verde e paleta preta/branca/vermelha permaneceram alinhados à referência.
+
+Console:
+PASS. Nenhum erro de página ou console foi registrado durante a inicialização da missão.
+
+--------------------------------------------------
 TESTE DE SINTAXE
 --------------------------------------------------
 

@@ -43,7 +43,7 @@ The project follows `src/doc/TRACE_STRIKE_ARCHITECTURE.md`:
 
 The renderer casts a bounded number of rays per frame and projects wall distance into vertical columns. Enemy visibility uses the raycaster line-of-sight test, so walls hide entities behind them. Combat performs a forward hitscan and checks map geometry before applying damage. Collision uses the same map cells that define the walls, keeping the logical and visual world aligned.
 
-The visual language is intentionally wireframe: black space, white geometry, red humanoid enemies, green telemetry, a geometric weapon silhouette, a compact radar, short tracers, and restrained muzzle/reload feedback. Enemies progress through waves of 2, 4, 6, and more hostiles. The sidearm uses an 18-round magazine, 36 initial reserve rounds, and a 144-round reserve cap.
+The visual language is intentionally wireframe: black space, white geometry, red humanoid enemies, green telemetry, a geometric weapon silhouette, a compact radar, short tracers, and restrained muzzle/reload feedback. The scene uses a clear horizon with sparse converging floor and wall contours instead of a dense infinite grid, matching the reference's technical corridor composition. Enemies progress through waves of 2, 4, 6, and more hostiles. The sidearm uses an 18-round magazine, 36 initial reserve rounds, and a 144-round reserve cap.
 
 ## Requirements
 
