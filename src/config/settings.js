@@ -1,0 +1,1 @@
+export const SETTINGS = Object.freeze({ width: 960, height: 540, volume: .16, sector: 'A-01' });
