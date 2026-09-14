@@ -52,7 +52,7 @@ export class Camera {
 			return;
 		}
 
-		this.pitch +=
+		this.pitch -=
 			mouseDeltaY *
 			this.pitchSensitivity;
 
