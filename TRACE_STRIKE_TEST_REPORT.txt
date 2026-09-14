@@ -297,3 +297,21 @@ Limitações restantes:
 
 - A automação não forçou a eliminação completa de uma onda para observar WAVE 02 visualmente.
 - A saída sonora continua dependente do contexto Web Audio desbloqueado pelo navegador.
+
+--------------------------------------------------
+REFINAMENTO ISOLADO DA ARMA — 2026-09-14
+--------------------------------------------------
+
+Resultado:
+
+- A composição da arma foi movida para `src/player/weapon.js`, preservando a responsabilidade do módulo.
+- A silhueta agora possui coronha, receiver, handguard, cano, muzzle, mira, carregador curvo e empunhadura.
+- A arma foi posicionada na região inferior direita e inclinada em direção ao centro da mira.
+- Recuo, inclinação/movimento de recarga, tracer e muzzle flash permanecem temporizados no estado da arma.
+- O renderer apenas delega `weapon.render(...)`; não contém mais a composição da arma.
+- `node --check src/player/weapon.js`, `node --check src/renderer/renderer.js` e `node --check src/systems/combat.js`: PASS.
+- Execução no navegador: PASS. HUD inicial exibiu `AMMO 18 / 36`; após disparo exibiu `AMMO 17 / 36`; nenhum erro de console foi observado.
+
+Limitação visual:
+
+- O Canvas continua usando perspectiva 2.5D, portanto a profundidade da arma é sugerida por escala, sobreposição, contorno e transformação, não por um modelo tridimensional.
