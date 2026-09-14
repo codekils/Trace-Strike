@@ -98,14 +98,17 @@ export class Renderer {
     ctx.lineWidth = 1;
     this.drawPolyline(ctx, topPoints);
     this.drawPolyline(ctx, bottomPoints);
+    ctx.strokeStyle = 'rgba(238, 242, 238, .32)';
+    this.drawPolyline(ctx, topPoints, 3);
+    this.drawPolyline(ctx, bottomPoints, -3);
     ctx.restore();
   }
 
-  drawPolyline(ctx, points) {
+  drawPolyline(ctx, points, yOffset = 0) {
     if (points.length < 2) return;
     ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    for (let index = 1; index < points.length; index++) ctx.lineTo(points[index].x, points[index].y);
+    ctx.moveTo(points[0].x, points[0].y + yOffset);
+    for (let index = 1; index < points.length; index++) ctx.lineTo(points[index].x, points[index].y + yOffset);
     ctx.stroke();
   }
 
@@ -119,14 +122,19 @@ export class Renderer {
       ),
       ...(objects.barrels ?? []).map(object =>
         this.projectWorldObject(object, .72, 'barrel')
+      ),
+      ...(objects.doors ?? []).map(object =>
+        this.projectWorldObject(object, .9, 'door')
       )
     ].filter(Boolean).sort((a, b) => b.depth - a.depth);
 
     for (const object of projected) {
       if (object.type === 'crate') {
         this.drawCrate(ctx, object);
-      } else {
+      } else if (object.type === 'barrel') {
         this.drawBarrel(ctx, object);
+      } else {
+        this.drawDoorway(ctx, object);
       }
     }
   }
@@ -211,6 +219,23 @@ export class Renderer {
     ctx.lineTo(left + width, top + bandInset);
     ctx.moveTo(left, projected.bottom - bandInset);
     ctx.lineTo(left + width, projected.bottom - bandInset);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawDoorway(ctx, projected) {
+    const width = Math.max(10, projected.height * .58);
+    const left = projected.x - width * .5;
+    const top = projected.bottom - projected.height;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(238, 242, 238, .7)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(left, projected.bottom);
+    ctx.lineTo(left, top);
+    ctx.lineTo(left + width, top);
+    ctx.lineTo(left + width, projected.bottom);
     ctx.stroke();
     ctx.restore();
   }
