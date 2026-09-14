@@ -74,10 +74,11 @@ export class Renderer {
 
   drawWallContours(ctx, canvas, hits, rays) {
     const horizon = this.getHorizon();
-    const contourStep = 24;
+    const contourStep = 8;
     ctx.save();
     ctx.strokeStyle = 'rgba(238, 242, 238, .92)';
     ctx.lineWidth = 1;
+    let faceStart = null;
     let previous = null;
 
     for (let index = 0; index < rays; index += contourStep) {
@@ -90,38 +91,55 @@ export class Renderer {
         x,
         top: horizon - height * .5,
         bottom: horizon + height * .5,
-        distance: hit.distance
+        distance: hit.distance,
+        cellX: hit.cellX,
+        cellY: hit.cellY
       };
 
       if (
         previous &&
-        Math.abs(point.distance - previous.distance) > .35
+        (
+          (
+            point.cellX !== previous.cellX &&
+            point.cellY !== previous.cellY
+          ) ||
+          Math.abs(point.distance - previous.distance) > .35
+        )
       ) {
-        this.drawWallEdge(ctx, previous, point);
+        this.drawWallFace(ctx, faceStart, previous);
+        faceStart = point;
+      }
+
+      if (!faceStart) {
+        faceStart = point;
       }
 
       previous = point;
     }
 
+    this.drawWallFace(ctx, faceStart, previous);
+
     ctx.restore();
   }
 
-  drawWallEdge(ctx, previous, point) {
-    const span = Math.max(4, point.x - previous.x);
+  drawWallFace(ctx, start, end) {
+    if (!start || !end || end.x - start.x < 2) return;
+
     ctx.beginPath();
-    ctx.moveTo(point.x - span, previous.top);
-    ctx.lineTo(point.x, point.top);
-    ctx.lineTo(point.x, point.bottom);
-    ctx.lineTo(point.x - span, previous.bottom);
+    ctx.moveTo(start.x, start.top);
+    ctx.lineTo(end.x, end.top);
+    ctx.lineTo(end.x, end.bottom);
+    ctx.lineTo(start.x, start.bottom);
+    ctx.closePath();
     ctx.stroke();
 
     ctx.save();
     ctx.strokeStyle = 'rgba(238, 242, 238, .32)';
     ctx.beginPath();
-    ctx.moveTo(point.x - span, previous.top + 3);
-    ctx.lineTo(point.x - 3, point.top + 3);
-    ctx.moveTo(point.x - span, previous.bottom - 3);
-    ctx.lineTo(point.x - 3, point.bottom - 3);
+    ctx.moveTo(start.x + 3, start.top + 3);
+    ctx.lineTo(end.x - 3, end.top + 3);
+    ctx.moveTo(start.x + 3, start.bottom - 3);
+    ctx.lineTo(end.x - 3, end.bottom - 3);
     ctx.stroke();
     ctx.restore();
   }
