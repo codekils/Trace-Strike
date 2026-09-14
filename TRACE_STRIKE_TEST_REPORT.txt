@@ -1,0 +1,280 @@
+TRACE STRIKE — TEST REPORT
+
+DATA:
+2026-09-14
+
+AMBIENTE:
+Sistema: Windows (workspace environment)
+Navegador: Chromium embedded in VS Code / Electron
+Versão: Chrome 148.0.7778.280, Electron 42.10.0
+Node: v26.8.2
+Python: NÃO DISPONÍVEL no PATH ("python : The term 'python' is not recognized as the name of a cmdlet, function, script file, or operable program.")
+Outros: Servidor HTTP equivalente executado com Node.js em http://localhost:8000
+
+--------------------------------------------------
+ESTRUTURA
+--------------------------------------------------
+
+Arquivos encontrados:
+Todos os 37 arquivos esperados da implementação foram encontrados, incluindo index.html, README.md, LICENSE, .gitignore, styles/main.css e os módulos previstos em src/.
+O contrato arquitetural foi preservado em src/doc/TRACE_STRIKE_ARCHITECTURE.md.
+
+Arquivos ausentes:
+Nenhum arquivo obrigatório ausente.
+
+Observações:
+Não foram instaladas dependências externas. Não há package.json porque o núcleo usa apenas HTML, CSS, JavaScript, Canvas 2D e Web Audio API.
+
+--------------------------------------------------
+TESTE DE SINTAXE
+--------------------------------------------------
+
+Comandos executados:
+node --check em cada arquivo .js sob src/
+
+Resultado:
+PASS
+
+Erros:
+Nenhum. 32 arquivos JavaScript foram verificados.
+
+--------------------------------------------------
+TESTE DE INICIALIZAÇÃO
+--------------------------------------------------
+
+Servidor utilizado:
+Servidor HTTP estático implementado com o módulo nativo http do Node.js.
+Tentativa inicial: python -m http.server 8000.
+
+Porta:
+8000
+
+URL:
+http://localhost:8000
+
+Resultado:
+PASS
+
+Erros:
+O comando Python não pôde ser usado porque Python não está disponível no PATH. A limitação foi contornada sem dependência adicional usando Node.js nativo.
+
+--------------------------------------------------
+TESTE DE RENDERIZAÇÃO
+--------------------------------------------------
+
+Canvas:
+PASS. Canvas criado e dimensionado em 738x447 no viewport de teste.
+
+Câmera:
+PASS. Câmera criada com posição do jogador, direção e FOV.
+
+Raycasting:
+PASS. O Canvas foi renderizado após iniciar a missão, com raios limitados por coluna.
+
+Perspectiva:
+PASS. Colunas verticais foram produzidas a partir da distância corrigida dos raios.
+
+Geometria:
+PASS. As paredes são derivadas da matriz de mapa e desenhadas sem imagens ou texturas.
+
+Resultado:
+PASS
+
+--------------------------------------------------
+TESTE DE MOVIMENTO
+--------------------------------------------------
+
+W:
+PASS parcial. Evento KeyW foi enviado durante uma partida ativa sem erro de console.
+
+S:
+NÃO TESTADO isoladamente.
+
+A:
+NÃO TESTADO isoladamente.
+
+D:
+NÃO TESTADO isoladamente.
+
+Mouse:
+PASS parcial. O sistema de entrada registra movimento relativo e o jogo iniciou sem falha de câmera. Pointer lock automático foi rejeitado pelo documento embutido do navegador e essa rejeição foi tratada.
+
+Resultado:
+PARTIAL
+
+--------------------------------------------------
+TESTE DE COLISÃO
+--------------------------------------------------
+
+Parede:
+PASS por inspeção estrutural e execução. Movimento usa as mesmas células de parede do mapa.
+
+Movimentação:
+PASS parcial. Movimento foi exercitado sem erro imediato; não foi realizado ensaio automatizado de contato em cada parede.
+
+Inimigos:
+PASS por implementação. IA usa moveWithCollision com raio próprio.
+
+Projéteis:
+NÃO APLICÁVEL ao disparo inicial: a arma usa hitscan, conforme permitido pela arquitetura.
+
+Resultado:
+PARTIAL
+
+--------------------------------------------------
+TESTE DE COMBATE
+--------------------------------------------------
+
+Disparo:
+PASS. Mouse down em partida limpa alterou AMMO de 8/8 para 7/8.
+
+Munição:
+PASS. HUD exibiu AMMO 7/8 após disparo.
+
+Recarga:
+PASS. R foi acionado e, após o tempo de recarga, o HUD voltou a AMMO 8/8.
+
+Acerto:
+PASS parcial. A rotina de hitscan verifica inimigo mais próximo e bloqueio por parede; não foi possível forçar um alvo alinhado visualmente pela automação sem expor estado interno.
+
+Dano:
+PASS por implementação e integração de IA. O jogador recebeu dano durante a execução, com HP observável caindo de 100 para 12 e depois 000.
+
+Morte:
+PASS. A tela GAME OVER foi exibida quando o HP chegou a 000.
+
+Resultado:
+PASS
+
+--------------------------------------------------
+TESTE DE IA
+--------------------------------------------------
+
+IDLE:
+PASS por implementação.
+
+PATROL:
+PASS por implementação; estado é selecionado quando o inimigo está fora do raio de perseguição.
+
+CHASE:
+PASS observado indiretamente pelo dano progressivo ao jogador durante a execução.
+
+ATTACK:
+PASS observado pelo dano periódico ao jogador.
+
+DEAD:
+NÃO TESTADO visualmente em navegador; transição está implementada no sistema de dano.
+
+Resultado:
+PARTIAL
+
+--------------------------------------------------
+TESTE DE HUD
+--------------------------------------------------
+
+HP:
+PASS. Valor exibido e atualizado, incluindo HP 100, HP 012 e HP 000.
+
+AMMO:
+PASS. Exibido e atualizado no disparo e recarga.
+
+ENEMIES:
+PASS. Exibido como ENEMIES 4.
+
+SECTOR:
+PASS. Exibido como SECTOR A-01.
+
+CROSSHAIR:
+PASS por renderização do módulo de mira no Canvas.
+
+Resultado:
+PASS
+
+--------------------------------------------------
+TESTE DE PAUSA
+--------------------------------------------------
+
+Resultado:
+PASS. Evento Escape enviado ao window exibiu a tela PAUSED; o botão RESUME retornou ao jogo.
+
+--------------------------------------------------
+TESTE DE GAME OVER
+--------------------------------------------------
+
+Resultado:
+PASS. Após aproximadamente 19 segundos de execução, HP chegou a 000 e a tela GAME OVER foi exibida.
+
+--------------------------------------------------
+ÁUDIO
+--------------------------------------------------
+
+Disparo:
+PASS por implementação via Web Audio API; sem arquivo externo.
+
+Impacto:
+PASS por implementação via Web Audio API.
+
+Recarga:
+PASS por implementação via Web Audio API.
+
+Dano:
+PASS por implementação via Web Audio API.
+
+Resultado:
+PASS parcial. Os osciladores foram criados de forma condicional após unlock do contexto; não foi possível medir saída sonora com a automação do navegador.
+
+--------------------------------------------------
+ERROS ENCONTRADOS
+--------------------------------------------------
+
+Arquivo: src/core/game.js
+Linha: bindUI, chamada requestPointerLock
+Mensagem: WrongDocumentError: The root document of this element is not valid for pointer lock.
+Contexto: O navegador embutido do VS Code rejeitou o pedido automático de pointer lock ao clicar em START MISSION.
+Impacto: Erro de página no primeiro teste; a partida e o HUD continuaram funcionando.
+Possível causa: O Canvas não pertence a um documento elegível para pointer lock no navegador embutido.
+Correção: O pedido agora é envolvido por try/catch e a Promise rejeitada recebe catch vazio. O jogo continua funcional sem pointer lock.
+
+Arquivo: ambiente
+Linha: comando de inicialização
+Mensagem: python : The term 'python' is not recognized as the name of a cmdlet, function, script file, or executable program.
+Contexto: Tentativa de executar python -m http.server 8000.
+Impacto: Python não pôde fornecer o servidor local.
+Possível causa: Python não instalado ou ausente no PATH.
+Correção: Servidor estático equivalente criado com o módulo nativo http do Node.js.
+
+--------------------------------------------------
+WARNINGS
+--------------------------------------------------
+
+Nenhum warning relevante do console após a correção de pointer lock.
+O erro de pointer lock foi registrado acima como erro encontrado e corrigido.
+
+--------------------------------------------------
+PROBLEMAS NÃO RESOLVIDOS
+--------------------------------------------------
+
+- Python não está disponível no ambiente; a execução foi validada com Node.js.
+- S, A e D não foram verificados individualmente por automação.
+- A morte visual de um inimigo e o estado DEAD não foram observados em uma sequência controlada.
+- A saída sonora não foi capturada por ferramenta de automação.
+- Pointer lock automático depende do navegador; o jogo funciona sem ele, mas a rotação exige foco/movimento aceito pelo navegador.
+
+--------------------------------------------------
+CORREÇÕES REALIZADAS
+--------------------------------------------------
+
+- Corrigida a instanciação da Weapon no Game.
+- HUD tornado visível ao iniciar uma missão.
+- Rejeição de pointer lock tratada para evitar erro imediato no navegador embutido.
+- README atualizado com conceito, execução, controles, arquitetura, sistemas e requisitos.
+
+--------------------------------------------------
+RESULTADO FINAL
+--------------------------------------------------
+
+STATUS:
+PARTIAL
+
+Resumo:
+Trace Strike foi implementado como um jogo modular de Canvas 2D com mapa geométrico, raycasting, perspectiva, câmera, colisão, jogador, arma hitscan, inimigos com IA, dano, HUD, menu, pausa, game over e áudio sintetizado. A sintaxe, estrutura, inicialização HTTP, renderização, disparo, recarga, dano, pausa e derrota foram verificadas. O status é PARTIAL porque alguns controles direcionais, a morte visual de inimigos e a saída sonora não puderam ser observados de forma automatizada neste ambiente, não por um erro conhecido de carregamento ou sintaxe.
