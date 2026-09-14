@@ -1,0 +1,3 @@
+import { Entity } from './entity.js';
+import { ENEMIES } from '../config/enemies.js';
+export class Enemy extends Entity { constructor(position) { super(position, ENEMIES.sentinel.health); this.speed = ENEMIES.sentinel.speed; this.damage = ENEMIES.sentinel.damage; this.attackRange = ENEMIES.sentinel.attackRange; this.attackCooldown = 0; this.radius = ENEMIES.sentinel.radius; } update(dt) { this.attackCooldown = Math.max(0, this.attackCooldown - dt * 1000); } }
