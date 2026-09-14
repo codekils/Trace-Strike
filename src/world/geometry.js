@@ -1,0 +1,4 @@
+export const distance = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+export const normalizeAngle = angle => Math.atan2(Math.sin(angle), Math.cos(angle));
+export const castRay = (origin, angle, maxDistance = 30) => ({ x: origin.x + Math.cos(angle) * maxDistance, y: origin.y + Math.sin(angle) * maxDistance });
+export function segmentIntersection(a, b, c, d) { const denominator = (d.y - c.y) * (b.x - a.x) - (d.x - c.x) * (b.y - a.y); if (Math.abs(denominator) < 1e-8) return null; const ua = ((d.x - c.x) * (a.y - c.y) - (d.y - c.y) * (a.x - c.x)) / denominator; const ub = ((b.x - a.x) * (a.y - c.y) - (b.y - a.y) * (a.x - c.x)) / denominator; return ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1 ? { x: a.x + ua * (b.x - a.x), y: a.y + ua * (b.y - a.y), t: ua } : null; }
