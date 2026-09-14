@@ -1,0 +1,1 @@
+export class Pause { constructor(element, resume) { this.element = element; element.querySelector('#resume-button').addEventListener('click', resume); } show() { this.element.hidden = false; } hide() { this.element.hidden = true; } }
