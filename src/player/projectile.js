@@ -1,0 +1,1 @@
+export const createHitscan = (origin, angle, range) => ({ origin: { ...origin }, angle, range, ttl: .08 });
