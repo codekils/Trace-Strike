@@ -1,0 +1,3 @@
+import { distance, normalizeAngle } from '../world/geometry.js';
+import { moveWithCollision } from '../world/collision.js';
+export function updateEnemyAI(enemy, player, world, dt) { if (enemy.dead) { enemy.state = 'DEAD'; return; } const gap = distance(enemy.position, player.position); const angle = Math.atan2(player.position.y - enemy.position.y, player.position.x - enemy.position.x); enemy.state = gap < enemy.attackRange ? 'ATTACK' : gap < 7 ? 'CHASE' : 'PATROL'; if (enemy.state === 'CHASE') moveWithCollision(enemy.position, Math.cos(angle) * enemy.speed * dt, Math.sin(angle) * enemy.speed * dt, world, enemy.radius); enemy.facing = normalizeAngle(angle); }
