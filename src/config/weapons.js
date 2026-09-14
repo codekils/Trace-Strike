@@ -1,1 +1,1 @@
-export const WEAPONS = Object.freeze({ sidearm: { damage: 34, fireRate: 320, magazine: 8, reloadTime: 1100, range: 14 } });
+export const WEAPONS = Object.freeze({ sidearm: { damage: 34, fireRate: 320, magazine: 18, reserve: 36, maxReserve: 144, reloadTime: 1100, range: 14 } });
