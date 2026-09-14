@@ -33,7 +33,7 @@ Data da rodada: 2026-09-14
 Viewport: 738x447
 
 Resultado:
-PASS. A cena foi verificada em uma nova página Chromium após a redução da grade. O horizonte permaneceu explícito, o piso ficou com poucas guias convergentes, os contornos arquiteturais ficaram esparsos, e a arma permaneceu no quadrante inferior direito apontando para o centro. Radar, HUD verde e paleta preta/branca/vermelha permaneceram alinhados à referência.
+PASS. A cena foi comparada diretamente com a imagem de referência em uma nova página Chromium. O renderer agora apresenta um corredor com grandes contornos de paredes, horizonte limpo, caixa central e cilindro lateral, sem grade de piso ou leque de raios. A arma foi reenquadrada como objeto em primeira pessoa, nascendo no canto inferior direito e convergindo para o centro. Radar e bloco HUD permanecem nos cantos superiores correspondentes.
 
 Console:
 PASS. Nenhum erro de página ou console foi registrado durante a inicialização da missão.

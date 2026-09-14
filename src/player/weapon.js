@@ -10,9 +10,9 @@ export class Weapon {
 		const reloadMotion = Math.sin(reloadProgress * Math.PI);
 		const recoilOffset = this.recoil * 12;
 		ctx.save();
-		ctx.translate(width * .78, height * .82 + recoilOffset + reloadMotion * 10);
-		ctx.rotate(.32 + reloadMotion * -.1);
-		ctx.scale(scale * .72, scale * .72);
+		ctx.translate(width * .72, height * .85 + recoilOffset + reloadMotion * 10);
+		ctx.rotate(.95 + reloadMotion * -.1);
+		ctx.scale(scale * .65, scale * .65);
 		ctx.lineJoin = 'round';
 		ctx.lineCap = 'round';
 		ctx.lineWidth = 3;

@@ -35,32 +35,53 @@ export class Renderer {
 
   drawPerspectiveFloor(ctx, canvas) {
     const horizon = canvas.height / 2;
-    ctx.strokeStyle = 'rgba(185, 213, 191, .12)';
+    ctx.strokeStyle = 'rgba(233, 240, 232, .4)';
     ctx.lineWidth = 1;
-    for (let step = 1; step < 5; step++) {
-      const y = horizon + (canvas.height / 2) * (step / 7) ** .72;
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-    }
-    for (let lane = -3; lane <= 3; lane++) {
-      ctx.beginPath(); ctx.moveTo(canvas.width / 2, horizon); ctx.lineTo(canvas.width / 2 + lane * canvas.width * .22, canvas.height); ctx.stroke();
-    }
-    ctx.strokeStyle = 'rgba(233, 240, 232, .35)';
     ctx.beginPath(); ctx.moveTo(0, horizon); ctx.lineTo(canvas.width, horizon); ctx.stroke();
   }
 
   drawArchitecture(ctx, canvas, hits, rays) {
-    const samples = [0, Math.floor(rays * .22), Math.floor(rays * .5), Math.floor(rays * .78), rays - 1];
-    ctx.strokeStyle = 'rgba(233, 240, 232, .78)';
-    ctx.lineWidth = 1.5;
+    const { width, height } = canvas;
+    const horizon = height * .53;
+    const line = 'rgba(233, 240, 232, .9)';
+    ctx.strokeStyle = line;
+    ctx.lineWidth = Math.max(1.5, width / 520);
+    ctx.lineJoin = 'miter';
     ctx.beginPath();
-    samples.forEach((index, sampleIndex) => {
-      const x = screenX(index, canvas.width, rays);
-      const height = wallHeight(hits[index].distance, canvas.height);
-      const top = (canvas.height - height) / 2;
-      const bottom = (canvas.height + height) / 2;
-      if (sampleIndex === 0) { ctx.moveTo(x, top); ctx.moveTo(x, bottom); }
-      else { ctx.lineTo(x, top); ctx.moveTo(screenX(samples[sampleIndex - 1], canvas.width, rays), (canvas.height + wallHeight(hits[samples[sampleIndex - 1]].distance, canvas.height)) / 2); ctx.lineTo(x, bottom); }
-    });
+    ctx.moveTo(width * .32, 0); ctx.lineTo(width * .39, horizon + height * .03);
+    ctx.lineTo(width * .39, horizon + height * .39);
+    ctx.moveTo(width * .8, 0); ctx.lineTo(width * .75, horizon - height * .25);
+    ctx.lineTo(width * .75, horizon + height * .02);
+    ctx.moveTo(0, horizon + height * .2); ctx.lineTo(width * .21, horizon + height * .1);
+    ctx.lineTo(width * .21, horizon - height * .07); ctx.lineTo(width * .39, horizon + height * .03);
+    ctx.lineTo(width * .39, horizon + height * .39);
+    ctx.moveTo(width, horizon + height * .04); ctx.lineTo(width * .75, horizon + height * .02);
+    ctx.lineTo(width * .75, horizon - height * .25); ctx.lineTo(width * .62, horizon - height * .02);
+    ctx.lineTo(width * .62, horizon + height * .02);
+    ctx.moveTo(width * .21, horizon + height * .1); ctx.lineTo(0, horizon + height * .33);
+    ctx.moveTo(width * .39, horizon + height * .39); ctx.lineTo(width * .27, height);
+    ctx.moveTo(width * .75, horizon + height * .02); ctx.lineTo(width, horizon + height * .18);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(233, 240, 232, .72)';
+    ctx.beginPath();
+    ctx.moveTo(width * .39, horizon + height * .03); ctx.lineTo(width * .48, horizon + height * .02);
+    ctx.lineTo(width * .52, horizon + height * .1); ctx.lineTo(width * .62, horizon + height * .1);
+    ctx.moveTo(width * .48, horizon + height * .02); ctx.lineTo(width * .48, horizon + height * .28);
+    ctx.moveTo(width * .52, horizon + height * .1); ctx.lineTo(width * .52, horizon + height * .28);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(233, 240, 232, .9)';
+    ctx.strokeRect(width * .405, horizon + height * .18, width * .14, height * .2);
+    ctx.beginPath();
+    ctx.moveTo(width * .405, horizon + height * .18); ctx.lineTo(width * .475, horizon + height * .28);
+    ctx.moveTo(width * .545, horizon + height * .18); ctx.lineTo(width * .475, horizon + height * .28);
+    ctx.moveTo(width * .405, horizon + height * .38); ctx.lineTo(width * .475, horizon + height * .28);
+    ctx.moveTo(width * .545, horizon + height * .38); ctx.lineTo(width * .475, horizon + height * .28);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(width * .73, horizon + height * .32, width * .055, height * .045, 0, 0, Math.PI * 2);
+    ctx.moveTo(width * .675, horizon + height * .32); ctx.lineTo(width * .675, horizon + height * .52);
+    ctx.ellipse(width * .73, horizon + height * .52, width * .055, height * .045, 0, 0, Math.PI);
+    ctx.moveTo(width * .785, horizon + height * .32); ctx.lineTo(width * .785, horizon + height * .52);
     ctx.stroke();
   }
 
