@@ -54,7 +54,7 @@ export class Renderer {
     }
     const visible = enemies.filter(enemy => !enemy.dead && this.raycaster.hasLineOfSight(this.camera.position, enemy.position)).map(enemy => this.projectEnemy(enemy)).filter(Boolean).sort((a, b) => b.depth - a.depth);
     for (const enemy of visible) this.drawEnemy(ctx, enemy);
-    this.drawWeapon(ctx, canvas, weapon);
+    weapon?.render(ctx, canvas.width, canvas.height);
     this.drawRadar(ctx, canvas, enemies);
     effects.draw(ctx, canvas);
     this.ui.drawCrosshair(ctx, canvas, weapon?.shot > 0);
@@ -90,31 +90,6 @@ export class Renderer {
     ctx.moveTo(x, y + size * .22); ctx.lineTo(x - size * .2, y + size * .5);
     ctx.moveTo(x, y + size * .22); ctx.lineTo(x + size * .2, y + size * .5);
     ctx.stroke();
-  }
-
-  drawWeapon(ctx, canvas, weapon) {
-    const x = canvas.width / 2;
-    const reloadTilt = weapon?.reloading ? .035 : 0;
-    const recoil = weapon?.recoil || 0;
-    const bottom = canvas.height + 8 + recoil * 10;
-    ctx.save();
-    ctx.translate(x, canvas.height * .82);
-    ctx.rotate(reloadTilt);
-    ctx.translate(-x, -canvas.height * .82);
-    ctx.strokeStyle = '#e9f0e8';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x - 52, bottom); ctx.lineTo(x - 42, canvas.height * .76); ctx.lineTo(x - 12, canvas.height * .68);
-    ctx.lineTo(x + 28, canvas.height * .75); ctx.lineTo(x + 58, bottom);
-    ctx.moveTo(x - 12, canvas.height * .68); ctx.lineTo(x - 4, canvas.height * .56); ctx.lineTo(x + 10, canvas.height * .56); ctx.lineTo(x + 28, canvas.height * .75);
-    ctx.moveTo(x - 4, canvas.height * .56); ctx.lineTo(x - 17, canvas.height * .6);
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(5, 6, 6, .95)';
-    ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.moveTo(x + 8, canvas.height * .73); ctx.lineTo(x + 14, bottom); ctx.stroke();
-    ctx.strokeStyle = '#e9f0e8'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x - 3, canvas.height * .56); ctx.lineTo(x + 3, canvas.height * .48); ctx.lineTo(x + 9, canvas.height * .56); ctx.stroke();
-    ctx.restore();
   }
 
   drawRadar(ctx, canvas, enemies) {
