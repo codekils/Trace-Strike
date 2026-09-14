@@ -2,7 +2,8 @@ import { COLORS } from '../config/constants.js';
 import {
   wallHeight,
   screenX,
-  projectVerticalSegment
+  projectVerticalSegment,
+  worldToCamera
 } from './projection.js';
 
 export class Renderer {
@@ -44,6 +45,7 @@ export class Renderer {
     const hits = this.raycaster.cast(this.camera, rays);
     this.drawWalls(ctx, canvas, hits, rays);
     this.drawWallContours(ctx, canvas, hits, rays);
+    this.drawWorldObjects(ctx, world);
     const visible = enemies.filter(enemy => enemy && !enemy.dead && this.raycaster.hasLineOfSight(this.camera.position, enemy.position)).map(enemy => this.projectEnemy(enemy)).filter(Boolean).sort((a, b) => b.depth - a.depth);
     for (const enemy of visible) this.drawEnemy(ctx, enemy);
     weapon?.render(ctx, canvas.width, canvas.height);
@@ -105,6 +107,112 @@ export class Renderer {
     ctx.moveTo(points[0].x, points[0].y);
     for (let index = 1; index < points.length; index++) ctx.lineTo(points[index].x, points[index].y);
     ctx.stroke();
+  }
+
+  drawWorldObjects(ctx, world) {
+    const objects = world.getObjects?.();
+    if (!objects) return;
+
+    const projected = [
+      ...(objects.crates ?? []).map(object =>
+        this.projectWorldObject(object, .56, 'crate')
+      ),
+      ...(objects.barrels ?? []).map(object =>
+        this.projectWorldObject(object, .72, 'barrel')
+      )
+    ].filter(Boolean).sort((a, b) => b.depth - a.depth);
+
+    for (const object of projected) {
+      if (object.type === 'crate') {
+        this.drawCrate(ctx, object);
+      } else {
+        this.drawBarrel(ctx, object);
+      }
+    }
+  }
+
+  projectWorldObject(object, worldHeight, type) {
+    const relative = worldToCamera(
+      object,
+      this.camera.position,
+      this.camera.angle
+    );
+
+    if (relative.depth <= .1) return null;
+
+    const halfFov = this.camera.fov * .5;
+    if (Math.abs(relative.side / relative.depth) > Math.tan(halfFov)) {
+      return null;
+    }
+
+    if (!this.raycaster.hasLineOfSight(this.camera.position, object)) {
+      return null;
+    }
+
+    const projection = projectVerticalSegment(
+      object,
+      worldHeight,
+      this.camera,
+      this.canvas.width,
+      this.canvas.height,
+      this.getHorizon()
+    );
+
+    return {
+      ...projection,
+      type
+    };
+  }
+
+  drawCrate(ctx, projected) {
+    const width = Math.max(8, projected.height * .82);
+    const left = projected.x - width * .5;
+    const top = projected.bottom - projected.height;
+
+    ctx.save();
+    ctx.fillStyle = '#020303';
+    ctx.strokeStyle = 'rgba(238, 242, 238, .88)';
+    ctx.lineWidth = 1;
+    ctx.fillRect(left, top, width, projected.height);
+    ctx.strokeRect(left, top, width, projected.height);
+    ctx.beginPath();
+    ctx.moveTo(left, top);
+    ctx.lineTo(left + width, projected.bottom);
+    ctx.moveTo(left + width, top);
+    ctx.lineTo(left, projected.bottom);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawBarrel(ctx, projected) {
+    const width = Math.max(7, projected.height * .54);
+    const left = projected.x - width * .5;
+    const top = projected.bottom - projected.height;
+    const bandInset = projected.height * .24;
+
+    ctx.save();
+    ctx.fillStyle = '#020303';
+    ctx.strokeStyle = 'rgba(238, 242, 238, .88)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(left + width * .2, top);
+    ctx.lineTo(left + width * .8, top);
+    ctx.lineTo(left + width, top + projected.height * .1);
+    ctx.lineTo(left + width, projected.bottom - projected.height * .1);
+    ctx.lineTo(left + width * .8, projected.bottom);
+    ctx.lineTo(left + width * .2, projected.bottom);
+    ctx.lineTo(left, projected.bottom - projected.height * .1);
+    ctx.lineTo(left, top + projected.height * .1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(left, top + bandInset);
+    ctx.lineTo(left + width, top + bandInset);
+    ctx.moveTo(left, projected.bottom - bandInset);
+    ctx.lineTo(left + width, projected.bottom - bandInset);
+    ctx.stroke();
+    ctx.restore();
   }
 
   projectEnemy(enemy) {
