@@ -1,0 +1,2 @@
+import { WORLD } from '../config/constants.js';
+export class Camera { constructor(player) { this.player = player; this.fov = WORLD.FOV; this.height = WORLD.CAMERA_HEIGHT; } get position() { return this.player.position; } get angle() { return this.player.angle; } }
