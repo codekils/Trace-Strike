@@ -1,0 +1,2 @@
+import { MAP, ENEMY_SPAWNS } from './map.js';
+export class World { constructor() { this.map = MAP; this.width = MAP[0].length; this.height = MAP.length; this.enemies = ENEMY_SPAWNS.map(spawn => ({ ...spawn })); this.walls = []; for (let y = 0; y < this.height; y++) for (let x = 0; x < this.width; x++) if (MAP[y][x] === '#') this.walls.push({ x, y }); } isWall(x, y) { const cell = this.map[Math.floor(y)]?.[Math.floor(x)]; return cell === '#'; } }
