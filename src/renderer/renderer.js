@@ -80,6 +80,7 @@ export class Renderer {
   }
 
   drawWalls(ctx, canvas, hits, rays) {
+    const horizon = this.getHorizon();
     const columnWidth = canvas.width / rays;
     for (let index = 0; index < rays; index++) {
       const hit = hits[index];
