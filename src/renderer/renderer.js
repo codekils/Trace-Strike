@@ -13,107 +13,209 @@ export class Renderer {
   }
 
   resize() {
-    this.canvas.width = Math.min(960, Math.max(480, innerWidth));
-    this.canvas.height = Math.min(540, Math.max(270, innerHeight));
+    this.canvas.width = Math.max(480, Math.min(960, innerWidth));
+    this.canvas.height = Math.max(270, Math.min(540, innerHeight));
   }
 
   render(world, enemies, effects, weapon) {
     const { ctx, canvas } = this;
     const rays = Math.min(canvas.width, 480);
-    ctx.fillStyle = COLORS.SKY;
+    const horizon = canvas.height * .5;
+    ctx.fillStyle = '#020303';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    this.drawPerspectiveFloor(ctx, canvas);
+    this.drawAtmosphere(ctx, canvas);
+    this.drawPerspectiveFloor(ctx, canvas, horizon);
     const hits = this.raycaster.cast(this.camera, rays);
-    this.drawArchitecture(ctx, canvas, hits, rays);
-    const visible = enemies.filter(enemy => !enemy.dead && this.raycaster.hasLineOfSight(this.camera.position, enemy.position)).map(enemy => this.projectEnemy(enemy)).filter(Boolean).sort((a, b) => b.depth - a.depth);
+    this.drawWalls(ctx, canvas, hits, rays);
+    this.drawWallContours(ctx, canvas, hits, rays);
+    const visible = enemies.filter(enemy => enemy && !enemy.dead && this.raycaster.hasLineOfSight(this.camera.position, enemy.position)).map(enemy => this.projectEnemy(enemy)).filter(Boolean).sort((a, b) => b.depth - a.depth);
     for (const enemy of visible) this.drawEnemy(ctx, enemy);
     weapon?.render(ctx, canvas.width, canvas.height);
     this.drawRadar(ctx, canvas, enemies);
-    effects.draw(ctx, canvas);
-    this.ui.drawCrosshair(ctx, canvas, weapon?.shot > 0);
+    effects?.draw?.(ctx, canvas);
+    this.ui.drawCrosshair(ctx, canvas, Boolean(weapon?.shot > 0));
   }
 
-  drawPerspectiveFloor(ctx, canvas) {
-    const horizon = canvas.height / 2;
-    ctx.strokeStyle = 'rgba(233, 240, 232, .4)';
+  drawAtmosphere(ctx, canvas) {
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#010202');
+    gradient.addColorStop(.48, '#030505');
+    gradient.addColorStop(.5, '#050807');
+    gradient.addColorStop(1, '#010202');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  drawPerspectiveFloor(ctx, canvas, horizon) {
+    const centerX = canvas.width * .5;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(233, 240, 232, .16)';
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, horizon); ctx.lineTo(canvas.width, horizon); ctx.stroke();
+    for (const step of [.58, .68, .8, .92]) {
+      const y = horizon + (canvas.height - horizon) * ((step - .5) / .5);
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    for (const lane of [-2, -1, 1, 2]) {
+      ctx.beginPath();
+      ctx.moveTo(centerX, horizon);
+      ctx.lineTo(centerX + lane * canvas.width * .19, canvas.height);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
-  drawArchitecture(ctx, canvas, hits, rays) {
-    const { width, height } = canvas;
-    const horizon = height * .53;
-    const line = 'rgba(233, 240, 232, .9)';
-    ctx.strokeStyle = line;
-    ctx.lineWidth = Math.max(1.5, width / 520);
+  drawWalls(ctx, canvas, hits, rays) {
+    const columnWidth = canvas.width / rays;
+    for (let index = 0; index < rays; index++) {
+      const hit = hits[index];
+      if (!hit) continue;
+      const x = screenX(index, canvas.width, rays);
+      const height = wallHeight(hit.distance, canvas.height);
+      const top = (canvas.height - height) * .5;
+      const shade = Math.max(.015, Math.min(.08, hit.shade * .06));
+      ctx.fillStyle = `rgba(220, 230, 222, ${shade})`;
+      ctx.fillRect(x, top, columnWidth + 1, height);
+    }
+  }
+
+  drawWallContours(ctx, canvas, hits, rays) {
+    const horizon = canvas.height * .5;
+    const topPoints = [];
+    const bottomPoints = [];
+    for (let index = 0; index < rays; index += 6) {
+      const hit = hits[index];
+      if (!hit) continue;
+      const x = screenX(index, canvas.width, rays);
+      const height = wallHeight(hit.distance, canvas.height);
+      topPoints.push({ x, y: (canvas.height - height) * .5 });
+      bottomPoints.push({ x, y: (canvas.height + height) * .5 });
+    }
+    ctx.save();
+    ctx.strokeStyle = 'rgba(233, 240, 232, .76)';
+    ctx.lineWidth = 1;
+    this.drawPolyline(ctx, topPoints);
+    this.drawPolyline(ctx, bottomPoints);
+    ctx.strokeStyle = 'rgba(233, 240, 232, .3)';
+    ctx.beginPath();
+    ctx.moveTo(0, horizon);
+    ctx.lineTo(canvas.width, horizon);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  drawPolyline(ctx, points) {
+    if (points.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let index = 1; index < points.length; index++) ctx.lineTo(points[index].x, points[index].y);
+    ctx.stroke();
+  }
+
+  projectEnemy(enemy) {
+    const dx = enemy.position.x - this.camera.position.x;
+    const dy = enemy.position.y - this.camera.position.y;
+    const angle = this.camera.angle;
+    const depth = dx * Math.cos(angle) + dy * Math.sin(angle);
+    const side = -dx * Math.sin(angle) + dy * Math.cos(angle);
+    if (depth <= .1) return null;
+    const halfFov = this.camera.fov * .5;
+    if (Math.abs(side / depth) > Math.tan(halfFov)) return null;
+    const focalLength = this.canvas.width / (2 * Math.tan(halfFov));
+    const x = this.canvas.width * .5 + side / depth * focalLength;
+    const dimensions = enemy.dimensions ?? { width: .42, height: .95, depth: .28 };
+    const projectedHeight = dimensions.height / Math.max(depth, .001) * focalLength * (enemy.visualScale ?? 1);
+    const height = Math.max(20, Math.min(this.canvas.height * 1.25, projectedHeight));
+    const worldHeight = Math.max(.01, dimensions.height);
+    const feetOffset = ((this.camera.height ?? .5) / worldHeight - .5) * height;
+    const bottom = this.canvas.height * .5 + feetOffset + height * .5;
+    return { enemy, x, depth, top: bottom - height, bottom, height, centerY: bottom - height * .5 };
+  }
+
+  drawEnemy(ctx, projected) {
+    const { enemy, x, top, bottom, height } = projected;
+    const humanoid = enemy.humanoid ?? { head: { width: .22, height: .2, depth: .18, y: .8 }, torso: { width: .3, height: .32, y: .49 }, shoulders: { width: .38, y: .63 }, arms: { thickness: .07, shoulderY: .62, handY: .42 }, legs: { thickness: .08, hipY: .34, footY: .05, separation: .1 } };
+    const scale = height / Math.max(.01, enemy.dimensions?.height ?? .95);
+    const localY = value => bottom - value * scale;
+    const color = enemy.visualState?.hitFlash > 0 ? '#fff' : enemy.visual?.outline ?? COLORS.ENEMY ?? '#ff334c';
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = enemy.visual?.fill ?? 'rgba(5, 6, 6, .92)';
+    ctx.lineWidth = Math.max(1.5, Math.min(5, scale * .035));
     ctx.lineJoin = 'miter';
+    ctx.lineCap = 'square';
+    const headWidth = humanoid.head.width * scale;
+    const headHeight = humanoid.head.height * scale;
+    const headY = localY(humanoid.head.y);
+    ctx.fillRect(x - headWidth * .5, headY, headWidth, headHeight);
+    ctx.strokeRect(x - headWidth * .5, headY, headWidth, headHeight);
+    const torsoWidth = humanoid.torso.width * scale;
+    const torsoHeight = humanoid.torso.height * scale;
+    const torsoTop = localY(humanoid.torso.y + humanoid.torso.height);
+    ctx.fillRect(x - torsoWidth * .5, torsoTop, torsoWidth, torsoHeight);
+    ctx.strokeRect(x - torsoWidth * .5, torsoTop, torsoWidth, torsoHeight);
+    const shoulderWidth = humanoid.shoulders.width * scale;
+    const shoulderY = localY(humanoid.shoulders.y);
     ctx.beginPath();
-    ctx.moveTo(width * .32, 0); ctx.lineTo(width * .39, horizon + height * .03);
-    ctx.lineTo(width * .39, horizon + height * .39);
-    ctx.moveTo(width * .8, 0); ctx.lineTo(width * .75, horizon - height * .25);
-    ctx.lineTo(width * .75, horizon + height * .02);
-    ctx.moveTo(0, horizon + height * .2); ctx.lineTo(width * .21, horizon + height * .1);
-    ctx.lineTo(width * .21, horizon - height * .07); ctx.lineTo(width * .39, horizon + height * .03);
-    ctx.lineTo(width * .39, horizon + height * .39);
-    ctx.moveTo(width, horizon + height * .04); ctx.lineTo(width * .75, horizon + height * .02);
-    ctx.lineTo(width * .75, horizon - height * .25); ctx.lineTo(width * .62, horizon - height * .02);
-    ctx.lineTo(width * .62, horizon + height * .02);
-    ctx.moveTo(width * .21, horizon + height * .1); ctx.lineTo(0, horizon + height * .33);
-    ctx.moveTo(width * .39, horizon + height * .39); ctx.lineTo(width * .27, height);
-    ctx.moveTo(width * .75, horizon + height * .02); ctx.lineTo(width, horizon + height * .18);
+    ctx.moveTo(x - shoulderWidth * .5, shoulderY);
+    ctx.lineTo(x + shoulderWidth * .5, shoulderY);
     ctx.stroke();
-    ctx.strokeStyle = 'rgba(233, 240, 232, .72)';
+    const armSpread = shoulderWidth * .5;
+    ctx.lineWidth = Math.max(ctx.lineWidth, humanoid.arms.thickness * scale);
     ctx.beginPath();
-    ctx.moveTo(width * .39, horizon + height * .03); ctx.lineTo(width * .48, horizon + height * .02);
-    ctx.lineTo(width * .52, horizon + height * .1); ctx.lineTo(width * .62, horizon + height * .1);
-    ctx.moveTo(width * .48, horizon + height * .02); ctx.lineTo(width * .48, horizon + height * .28);
-    ctx.moveTo(width * .52, horizon + height * .1); ctx.lineTo(width * .52, horizon + height * .28);
+    ctx.moveTo(x - armSpread, localY(humanoid.arms.shoulderY));
+    ctx.lineTo(x - armSpread - humanoid.arms.thickness * scale * 1.5, localY(humanoid.arms.handY));
+    ctx.moveTo(x + armSpread, localY(humanoid.arms.shoulderY));
+    ctx.lineTo(x + armSpread + humanoid.arms.thickness * scale * 1.5, localY(humanoid.arms.handY));
     ctx.stroke();
-    ctx.strokeStyle = 'rgba(233, 240, 232, .9)';
-    ctx.strokeRect(width * .405, horizon + height * .18, width * .14, height * .2);
+    const legOffset = humanoid.legs.separation * scale * .5;
+    ctx.lineWidth = Math.max(ctx.lineWidth, humanoid.legs.thickness * scale);
     ctx.beginPath();
-    ctx.moveTo(width * .405, horizon + height * .18); ctx.lineTo(width * .475, horizon + height * .28);
-    ctx.moveTo(width * .545, horizon + height * .18); ctx.lineTo(width * .475, horizon + height * .28);
-    ctx.moveTo(width * .405, horizon + height * .38); ctx.lineTo(width * .475, horizon + height * .28);
-    ctx.moveTo(width * .545, horizon + height * .38); ctx.lineTo(width * .475, horizon + height * .28);
+    ctx.moveTo(x - legOffset, localY(humanoid.legs.hipY));
+    ctx.lineTo(x - legOffset, localY(humanoid.legs.footY));
+    ctx.moveTo(x + legOffset, localY(humanoid.legs.hipY));
+    ctx.lineTo(x + legOffset, localY(humanoid.legs.footY));
     ctx.stroke();
+    const walkPhase = enemy.visualState?.walkPhase ?? 0;
+    if (enemy.state === 'CHASE' && Math.abs(Math.sin(walkPhase)) > .05) {
+      const swing = Math.sin(walkPhase) * height * .035;
+      ctx.beginPath();
+      ctx.moveTo(x - legOffset, localY(humanoid.legs.hipY));
+      ctx.lineTo(x - legOffset - swing, localY(humanoid.legs.footY));
+      ctx.moveTo(x + legOffset, localY(humanoid.legs.hipY));
+      ctx.lineTo(x + legOffset + swing, localY(humanoid.legs.footY));
+      ctx.stroke();
+    }
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.ellipse(width * .73, horizon + height * .32, width * .055, height * .045, 0, 0, Math.PI * 2);
-    ctx.moveTo(width * .675, horizon + height * .32); ctx.lineTo(width * .675, horizon + height * .52);
-    ctx.ellipse(width * .73, horizon + height * .52, width * .055, height * .045, 0, 0, Math.PI);
-    ctx.moveTo(width * .785, horizon + height * .32); ctx.lineTo(width * .785, horizon + height * .52);
+    ctx.moveTo(x - height * .08, bottom);
+    ctx.lineTo(x + height * .08, bottom);
     ctx.stroke();
-  }
-
-  drawEnemy(ctx, enemy) {
-    const size = Math.max(24, Math.min(this.canvas.height * 1.1, this.canvas.height / enemy.depth * .65));
-    const x = enemy.x;
-    const y = this.canvas.height / 2;
-    ctx.strokeStyle = COLORS.ENEMY;
-    ctx.lineWidth = Math.max(2, size * .045);
-    ctx.fillStyle = 'rgba(5, 6, 6, .88)';
-    ctx.fillRect(x - size * .14, y - size * .44, size * .28, size * .25);
-    ctx.strokeRect(x - size * .14, y - size * .44, size * .28, size * .25);
-    ctx.fillRect(x - size * .22, y - size * .17, size * .44, size * .4);
-    ctx.strokeRect(x - size * .22, y - size * .17, size * .44, size * .4);
-    ctx.beginPath();
-    ctx.moveTo(x, y - size * .18); ctx.lineTo(x, y + size * .22);
-    ctx.moveTo(x - size * .26, y - size * .05); ctx.lineTo(x + size * .26, y - size * .05);
-    ctx.moveTo(x, y + size * .22); ctx.lineTo(x - size * .2, y + size * .5);
-    ctx.moveTo(x, y + size * .22); ctx.lineTo(x + size * .2, y + size * .5);
-    ctx.stroke();
+    ctx.restore();
   }
 
   drawRadar(ctx, canvas, enemies) {
-    const radius = Math.min(58, canvas.width * .08);
-    const center = { x: canvas.width - radius - 28, y: radius + 26 };
-    ctx.strokeStyle = 'rgba(233, 240, 232, .7)';
+    const radius = Math.min(52, canvas.width * .07);
+    const center = { x: canvas.width - radius - 30, y: radius + 28 };
+    ctx.save();
+    ctx.strokeStyle = 'rgba(233, 240, 232, .68)';
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
-    ctx.moveTo(center.x - radius, center.y); ctx.lineTo(center.x + radius, center.y);
-    ctx.moveTo(center.x, center.y - radius); ctx.lineTo(center.x, center.y + radius); ctx.stroke();
-    ctx.fillStyle = '#b9d5bf';
-    ctx.beginPath(); ctx.moveTo(center.x, center.y - 8); ctx.lineTo(center.x - 6, center.y + 7); ctx.lineTo(center.x + 6, center.y + 7); ctx.closePath(); ctx.fill();
+    ctx.moveTo(center.x - radius, center.y);
+    ctx.lineTo(center.x + radius, center.y);
+    ctx.moveTo(center.x, center.y - radius);
+    ctx.lineTo(center.x, center.y + radius);
+    ctx.stroke();
+    ctx.fillStyle = COLORS.WALL ?? '#b9d5bf';
+    ctx.beginPath();
+    ctx.moveTo(center.x, center.y - 9);
+    ctx.lineTo(center.x - 6, center.y + 7);
+    ctx.lineTo(center.x + 6, center.y + 7);
+    ctx.closePath();
+    ctx.fill();
     for (const enemy of enemies) {
       if (enemy.dead) continue;
       const dx = enemy.position.x - this.camera.position.x;
@@ -121,16 +223,10 @@ export class Renderer {
       const scale = radius / 7;
       const ex = center.x + (-dx * Math.sin(this.camera.angle) + dy * Math.cos(this.camera.angle)) * scale;
       const ey = center.y - (dx * Math.cos(this.camera.angle) + dy * Math.sin(this.camera.angle)) * scale;
-      if (Math.hypot(ex - center.x, ey - center.y) < radius) { ctx.fillStyle = COLORS.ENEMY; ctx.fillRect(ex - 3, ey - 3, 6, 6); }
+      if (Math.hypot(ex - center.x, ey - center.y) >= radius) continue;
+      ctx.fillStyle = COLORS.ENEMY ?? '#ff334c';
+      ctx.fillRect(ex - 2, ey - 2, 4, 4);
     }
-  }
-
-  projectEnemy(enemy) {
-    const dx = enemy.position.x - this.camera.position.x;
-    const dy = enemy.position.y - this.camera.position.y;
-    const depth = dx * Math.cos(this.camera.angle) + dy * Math.sin(this.camera.angle);
-    const side = -dx * Math.sin(this.camera.angle) + dy * Math.cos(this.camera.angle);
-    if (depth <= .1 || Math.abs(side / depth) > Math.tan(this.camera.fov / 2)) return null;
-    return { x: this.canvas.width / 2 + side / depth * this.canvas.width / (2 * Math.tan(this.camera.fov / 2)), depth };
+    ctx.restore();
   }
 }
