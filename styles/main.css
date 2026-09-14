@@ -17,4 +17,7 @@ button:hover, button:focus-visible { background: var(--green); color: var(--bg);
 .hud { position: absolute; inset: 0; pointer-events: none; padding: 28px; color: var(--ink); font-size: .75rem; letter-spacing: .1em; }
 .hud-line { display: flex; justify-content: flex-start; gap: 32px; text-shadow: 0 0 8px rgba(233,240,232,.28); }
 .hud-line:first-child span:first-child, .hud-line:nth-child(2) span:first-child { color: var(--green); }
+.hud-ammo { position: absolute; left: 50%; bottom: 76px; transform: translateX(52px); display: grid; gap: 3px; min-width: 86px; padding-left: 10px; border-left: 1px solid var(--line); color: var(--ink); }
+.hud-ammo small { color: var(--muted); font-size: .6rem; letter-spacing: .16em; }
+.hud-ammo strong { color: var(--green); font-size: .9rem; font-weight: 400; letter-spacing: .08em; }
 .hud .danger { color: var(--red); }

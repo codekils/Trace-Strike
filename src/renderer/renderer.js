@@ -17,7 +17,7 @@ export class Renderer {
     this.canvas.height = Math.min(540, Math.max(270, innerHeight));
   }
 
-  render(world, enemies, effects) {
+  render(world, enemies, effects, weapon) {
     const { ctx, canvas } = this;
     const rays = Math.min(canvas.width, 480);
     ctx.fillStyle = COLORS.SKY;
@@ -31,7 +31,7 @@ export class Renderer {
       const top = (canvas.height - height) / 2;
       ctx.fillStyle = `rgba(185, 213, 191, ${Math.min(.16, hit.shade * .12)})`;
       ctx.fillRect(x, top, canvas.width / rays + 1, height);
-      if (index % 8 === 0) {
+      if (index % 24 === 0) {
         ctx.strokeStyle = `rgba(233, 240, 232, ${.16 + hit.shade * .34})`;
         ctx.beginPath();
         ctx.moveTo(x, top);
@@ -41,7 +41,7 @@ export class Renderer {
     }
     ctx.strokeStyle = 'rgba(233, 240, 232, .72)';
     ctx.lineWidth = 1;
-    for (let index = 0; index < rays; index += 8) {
+    for (let index = 0; index < rays; index += 12) {
       const hit = hits[index];
       const x = screenX(index, canvas.width, rays);
       const height = wallHeight(hit.distance, canvas.height);
@@ -52,12 +52,12 @@ export class Renderer {
       ctx.lineTo(x + canvas.width / rays * 8, (canvas.height + height) / 2);
       ctx.stroke();
     }
-    const visible = enemies.filter(enemy => !enemy.dead).map(enemy => this.projectEnemy(enemy)).filter(Boolean).sort((a, b) => b.depth - a.depth);
+    const visible = enemies.filter(enemy => !enemy.dead && this.raycaster.hasLineOfSight(this.camera.position, enemy.position)).map(enemy => this.projectEnemy(enemy)).filter(Boolean).sort((a, b) => b.depth - a.depth);
     for (const enemy of visible) this.drawEnemy(ctx, enemy);
-    this.drawWeapon(ctx, canvas);
+    this.drawWeapon(ctx, canvas, weapon);
     this.drawRadar(ctx, canvas, enemies);
     effects.draw(ctx, canvas);
-    this.ui.drawCrosshair(ctx, canvas);
+    this.ui.drawCrosshair(ctx, canvas, weapon?.shot > 0);
   }
 
   drawPerspectiveFloor(ctx, canvas) {
@@ -74,12 +74,16 @@ export class Renderer {
   }
 
   drawEnemy(ctx, enemy) {
-    const size = Math.min(this.canvas.height * 1.1, this.canvas.height / enemy.depth * .5);
+    const size = Math.max(24, Math.min(this.canvas.height * 1.1, this.canvas.height / enemy.depth * .65));
     const x = enemy.x;
     const y = this.canvas.height / 2;
     ctx.strokeStyle = COLORS.ENEMY;
-    ctx.lineWidth = Math.max(1, size * .035);
-    ctx.strokeRect(x - size * .12, y - size * .42, size * .24, size * .24);
+    ctx.lineWidth = Math.max(2, size * .045);
+    ctx.fillStyle = 'rgba(5, 6, 6, .88)';
+    ctx.fillRect(x - size * .14, y - size * .44, size * .28, size * .25);
+    ctx.strokeRect(x - size * .14, y - size * .44, size * .28, size * .25);
+    ctx.fillRect(x - size * .22, y - size * .17, size * .44, size * .4);
+    ctx.strokeRect(x - size * .22, y - size * .17, size * .44, size * .4);
     ctx.beginPath();
     ctx.moveTo(x, y - size * .18); ctx.lineTo(x, y + size * .22);
     ctx.moveTo(x - size * .26, y - size * .05); ctx.lineTo(x + size * .26, y - size * .05);
@@ -88,9 +92,15 @@ export class Renderer {
     ctx.stroke();
   }
 
-  drawWeapon(ctx, canvas) {
+  drawWeapon(ctx, canvas, weapon) {
     const x = canvas.width / 2;
-    const bottom = canvas.height + 8;
+    const reloadTilt = weapon?.reloading ? .035 : 0;
+    const recoil = weapon?.recoil || 0;
+    const bottom = canvas.height + 8 + recoil * 10;
+    ctx.save();
+    ctx.translate(x, canvas.height * .82);
+    ctx.rotate(reloadTilt);
+    ctx.translate(-x, -canvas.height * .82);
     ctx.strokeStyle = '#e9f0e8';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -99,6 +109,12 @@ export class Renderer {
     ctx.moveTo(x - 12, canvas.height * .68); ctx.lineTo(x - 4, canvas.height * .56); ctx.lineTo(x + 10, canvas.height * .56); ctx.lineTo(x + 28, canvas.height * .75);
     ctx.moveTo(x - 4, canvas.height * .56); ctx.lineTo(x - 17, canvas.height * .6);
     ctx.stroke();
+    ctx.strokeStyle = 'rgba(5, 6, 6, .95)';
+    ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(x + 8, canvas.height * .73); ctx.lineTo(x + 14, bottom); ctx.stroke();
+    ctx.strokeStyle = '#e9f0e8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x - 3, canvas.height * .56); ctx.lineTo(x + 3, canvas.height * .48); ctx.lineTo(x + 9, canvas.height * .56); ctx.stroke();
+    ctx.restore();
   }
 
   drawRadar(ctx, canvas, enemies) {
