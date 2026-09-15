@@ -8,7 +8,9 @@ export class Player {
       y: position.y
     };
 
-    this.angle = 0;
+    this.angle = Number.isFinite(position.angle)
+      ? position.angle
+      : 0;
     this.health = PLAYER.HEALTH;
     this.speed = PLAYER.SPEED;
 

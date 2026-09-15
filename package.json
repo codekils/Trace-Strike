@@ -1,0 +1,24 @@
+{
+  "name": "trace-strike",
+  "version": "1.0.0",
+  "description": "Trace Strike is a lightweight, minimalist 2.5D FPS for the browser. The world is made from map geometry and rendered with a Canvas 2D raycaster: no textures, 3D models, game engine, or runtime dependencies are required.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codekils/Trace-Strike.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/codekils/Trace-Strike/issues"
+  },
+  "homepage": "https://github.com/codekils/Trace-Strike#readme",
+  "dependencies": {
+    "three": "^0.186.0"
+  }
+}

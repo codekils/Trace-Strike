@@ -1,7 +1,9 @@
 import { COLORS } from '../config/constants.js';
+import { Scene3D } from './scene3d.js';
 import {
   wallHeight,
   screenX,
+  projectPoint,
   projectVerticalSegment,
   worldToCamera
 } from './projection.js';
@@ -13,13 +15,18 @@ export class Renderer {
     this.camera = camera;
     this.raycaster = raycaster;
     this.ui = ui;
+    this.scene3d = new Scene3D(
+      document.querySelector('#scene-canvas'),
+      camera
+    );
     this.resize();
     addEventListener('resize', () => this.resize());
   }
 
   resize() {
-    this.canvas.width = Math.max(480, Math.min(960, innerWidth));
-    this.canvas.height = Math.max(270, Math.min(540, innerHeight));
+    this.canvas.width = innerWidth;
+    this.canvas.height = innerHeight;
+    this.scene3d?.resize(this.canvas.width, this.canvas.height);
   }
 
   getHorizon() {
@@ -36,16 +43,8 @@ export class Renderer {
 
   render(world, enemies, effects, weapon) {
     const { ctx, canvas } = this;
-    const rays = Math.min(canvas.width, 480);
-    const horizon = this.getHorizon();
-    ctx.fillStyle = '#020303';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    this.drawAtmosphere(ctx, canvas);
-    this.drawPerspectiveFloor(ctx, canvas, horizon);
-    const hits = this.raycaster.cast(this.camera, rays);
-    this.drawWalls(ctx, canvas, hits, rays);
-    this.drawWallContours(ctx, canvas, hits, rays);
-    this.drawWorldObjects(ctx, world);
+    this.scene3d.render(world);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     const visible = enemies.filter(enemy => enemy && !enemy.dead && this.raycaster.hasLineOfSight(this.camera.position, enemy.position)).map(enemy => this.projectEnemy(enemy)).filter(Boolean).sort((a, b) => b.depth - a.depth);
     for (const enemy of visible) this.drawEnemy(ctx, enemy);
     weapon?.render(ctx, canvas.width, canvas.height);
@@ -133,13 +132,15 @@ export class Renderer {
     ctx.closePath();
     ctx.stroke();
 
+    const inset = Math.min(5, Math.max(2, (end.x - start.x) * .08));
     ctx.save();
-    ctx.strokeStyle = 'rgba(238, 242, 238, .32)';
+    ctx.strokeStyle = 'rgba(238, 242, 238, .38)';
     ctx.beginPath();
-    ctx.moveTo(start.x + 3, start.top + 3);
-    ctx.lineTo(end.x - 3, end.top + 3);
-    ctx.moveTo(start.x + 3, start.bottom - 3);
-    ctx.lineTo(end.x - 3, end.bottom - 3);
+    ctx.moveTo(start.x + inset, start.top + inset);
+    ctx.lineTo(end.x - inset, end.top + inset);
+    ctx.lineTo(end.x - inset, end.bottom - inset);
+    ctx.lineTo(start.x + inset, start.bottom - inset);
+    ctx.closePath();
     ctx.stroke();
     ctx.restore();
   }
@@ -164,7 +165,7 @@ export class Renderer {
         this.projectWorldObject(object, .72, 'barrel')
       ),
       ...(objects.doors ?? []).map(object =>
-        this.projectWorldObject(object, .9, 'door')
+        this.projectDoorway(object)
       )
     ].filter(Boolean).sort((a, b) => b.depth - a.depth);
 
@@ -212,8 +213,50 @@ export class Renderer {
     };
   }
 
+  projectDoorway(door) {
+    const relative = worldToCamera(
+      door,
+      this.camera.position,
+      this.camera.angle
+    );
+
+    if (
+      relative.depth <= .1 ||
+      !this.raycaster.hasLineOfSight(this.camera.position, door)
+    ) {
+      return null;
+    }
+
+    const halfWidth = .5;
+    const alongVerticalWall = door.orientation === 'vertical';
+    const start = alongVerticalWall
+      ? { x: door.x, y: door.y - halfWidth }
+      : { x: door.x - halfWidth, y: door.y };
+    const end = alongVerticalWall
+      ? { x: door.x, y: door.y + halfWidth }
+      : { x: door.x + halfWidth, y: door.y };
+    const horizon = this.getHorizon();
+    const project = (point, z) => projectPoint(
+      { ...point, z },
+      this.camera,
+      this.canvas.width,
+      this.canvas.height,
+      horizon
+    );
+
+    return {
+      type: 'door',
+      depth: relative.depth,
+      startBottom: project(start, 0),
+      startTop: project(start, 1.1),
+      endBottom: project(end, 0),
+      endTop: project(end, 1.1)
+    };
+  }
+
   drawCrate(ctx, projected) {
     const width = Math.max(8, projected.height * .82);
+    const depth = width * .22;
     const left = projected.x - width * .5;
     const top = projected.bottom - projected.height;
 
@@ -224,6 +267,15 @@ export class Renderer {
     ctx.fillRect(left, top, width, projected.height);
     ctx.strokeRect(left, top, width, projected.height);
     ctx.beginPath();
+    ctx.moveTo(left, top + depth);
+    ctx.lineTo(left + depth, top);
+    ctx.lineTo(left + width, top);
+    ctx.lineTo(left + width + depth, top + depth);
+    ctx.lineTo(left + width, top + depth * 2);
+    ctx.moveTo(left + width, top);
+    ctx.lineTo(left + width, projected.bottom);
+    ctx.lineTo(left + width + depth, projected.bottom - depth);
+    ctx.lineTo(left + width + depth, top + depth);
     ctx.moveTo(left, top);
     ctx.lineTo(left + width, projected.bottom);
     ctx.moveTo(left + width, top);
@@ -255,6 +307,17 @@ export class Renderer {
     ctx.fill();
     ctx.stroke();
     ctx.beginPath();
+    ctx.ellipse(
+      projected.x,
+      top + projected.height * .1,
+      width * .3,
+      Math.max(2, projected.height * .06),
+      0,
+      0,
+      Math.PI * 2
+    );
+    ctx.stroke();
+    ctx.beginPath();
     ctx.moveTo(left, top + bandInset);
     ctx.lineTo(left + width, top + bandInset);
     ctx.moveTo(left, projected.bottom - bandInset);
@@ -264,18 +327,21 @@ export class Renderer {
   }
 
   drawDoorway(ctx, projected) {
-    const width = Math.max(10, projected.height * .58);
-    const left = projected.x - width * .5;
-    const top = projected.bottom - projected.height;
-
     ctx.save();
-    ctx.strokeStyle = 'rgba(238, 242, 238, .7)';
+    ctx.strokeStyle = 'rgba(238, 242, 238, .82)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(left, projected.bottom);
-    ctx.lineTo(left, top);
-    ctx.lineTo(left + width, top);
-    ctx.lineTo(left + width, projected.bottom);
+    ctx.moveTo(projected.startBottom.x, projected.startBottom.y);
+    ctx.lineTo(projected.startTop.x, projected.startTop.y);
+    ctx.lineTo(projected.endTop.x, projected.endTop.y);
+    ctx.lineTo(projected.endBottom.x, projected.endBottom.y);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(238, 242, 238, .38)';
+    ctx.beginPath();
+    ctx.moveTo(projected.startBottom.x + 3, projected.startBottom.y);
+    ctx.lineTo(projected.startTop.x + 3, projected.startTop.y + 3);
+    ctx.lineTo(projected.endTop.x - 3, projected.endTop.y + 3);
+    ctx.lineTo(projected.endBottom.x - 3, projected.endBottom.y);
     ctx.stroke();
     ctx.restore();
   }

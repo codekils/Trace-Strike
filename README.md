@@ -1,6 +1,6 @@
 # Trace Strike
 
-Trace Strike is a lightweight, minimalist 2.5D FPS for the browser. The world is made from map geometry and rendered with a Canvas 2D raycaster: no textures, 3D models, game engine, or runtime dependencies are required.
+Trace Strike is a lightweight, minimalist FPS for the browser. The playable world keeps a grid for movement, combat, and line-of-sight, while Three.js renders the architecture as solid WebGL geometry.
 
 ## Concept
 
@@ -41,7 +41,7 @@ The project follows `src/doc/TRACE_STRIKE_ARCHITECTURE.md`:
 
 ## Main systems
 
-The renderer casts a bounded number of rays per frame and projects wall distance into vertical columns. Enemy visibility uses the raycaster line-of-sight test, so walls hide entities behind them. Combat performs a forward hitscan and checks map geometry before applying damage. Collision uses the same map cells that define the walls, keeping the logical and visual world aligned.
+The renderer uses Three.js to build connected wall prisms, door lintels, crates, and barrels with real depth and occlusion. Doorways are gaps in the wall geometry, rather than overlay drawings. Enemy visibility uses the grid raycaster line-of-sight test, so walls hide entities behind them. Combat performs a forward hitscan and checks map geometry before applying damage. Collision uses the same map cells that define the walls, keeping the logical and visual world aligned.
 
 The visual language is intentionally wireframe: black space, white geometry, red humanoid enemies, green telemetry, a geometric weapon silhouette, a compact radar, short tracers, and restrained muzzle/reload feedback. The scene uses a clear horizon with sparse converging floor and wall contours instead of a dense infinite grid, matching the reference's technical corridor composition. Enemies progress through waves of 2, 4, 6, and more hostiles. The sidearm uses an 18-round magazine, 36 initial reserve rounds, and a 144-round reserve cap.
 
@@ -49,6 +49,6 @@ The visual language is intentionally wireframe: black space, white geometry, red
 
 - Modern browser with ES module and Canvas 2D support
 - Python 3, or another static HTTP server
-- No npm installation or external package is required
+- Node.js and npm, to install the lightweight `three` dependency
 
 The architecture document is preserved at `src/doc/TRACE_STRIKE_ARCHITECTURE.md`.
